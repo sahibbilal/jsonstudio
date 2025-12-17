@@ -74,6 +74,7 @@ function json_studio_scripts() {
 		 is_page_template( 'templates/tool-viewer.php' ) || 
 		 is_page_template( 'templates/tool-converter.php' ) ||
 		 is_page_template( 'templates/tool-diff-merge.php' ) ||
+		 is_page_template( 'templates/tool-array-converter.php' ) ||
 		 is_page_template( 'templates/tool-schema-generator.php' ) ||
 		 is_page_template( 'templates/tool-mock-data.php' ) ||
 		 is_page_template( 'templates/tool-api-dashboard.php' ) ||
@@ -121,8 +122,34 @@ function json_studio_scripts() {
 		}
 	}
 
+	if ( is_page_template( 'templates/tool-diff-merge.php' ) || $tool_slug === 'json-diff-merge' ) {
+		// Enqueue React build
+		wp_enqueue_script( 'json-studio-diff-merge', get_template_directory_uri() . '/assets/js/build/tool-diff-merge.js', array(), $theme_version, true );
+		// CSS is included in the JS bundle, but we can also enqueue separately if needed
+		$css_file = get_template_directory() . '/assets/js/build/assets/main.css';
+		if ( file_exists( $css_file ) ) {
+			wp_enqueue_style( 'json-studio-diff-merge-css', get_template_directory_uri() . '/assets/js/build/assets/main.css', array(), $theme_version );
+		}
+	}
+
+	if ( is_page_template( 'templates/tool-array-converter.php' ) || $tool_slug === 'json-array-converter' ) {
+		// Enqueue React build
+		wp_enqueue_script( 'json-studio-array-converter', get_template_directory_uri() . '/assets/js/build/tool-array-converter.js', array(), $theme_version, true );
+		// CSS is included in the JS bundle, but we can also enqueue separately if needed
+		$css_file = get_template_directory() . '/assets/js/build/assets/main.css';
+		if ( file_exists( $css_file ) ) {
+			wp_enqueue_style( 'json-studio-array-converter-css', get_template_directory_uri() . '/assets/js/build/assets/main.css', array(), $theme_version );
+		}
+	}
+
 	if ( is_page_template( 'templates/tool-converter.php' ) || $tool_slug === 'json-converter' ) {
-		wp_enqueue_script( 'json-studio-converter', get_template_directory_uri() . '/assets/js/tool-converter.js', array( 'codemirror' ), $theme_version, true );
+		// Enqueue React build
+		wp_enqueue_script( 'json-studio-converter', get_template_directory_uri() . '/assets/js/build/tool-converter.js', array(), $theme_version, true );
+		// CSS is included in the JS bundle, but we can also enqueue separately if needed
+		$css_file = get_template_directory() . '/assets/js/build/assets/main.css';
+		if ( file_exists( $css_file ) ) {
+			wp_enqueue_style( 'json-studio-converter-css', get_template_directory_uri() . '/assets/js/build/assets/main.css', array(), $theme_version );
+		}
 	}
 
 	// General editor script for other tool pages
@@ -429,7 +456,7 @@ add_filter( 'body_class', 'json_studio_body_classes' );
  * Add type="module" to React build scripts
  */
 function json_studio_add_module_type( $tag, $handle, $src ) {
-	$module_scripts = array( 'json-studio-beautifier', 'json-studio-validator', 'json-studio-viewer' );
+	$module_scripts = array( 'json-studio-beautifier', 'json-studio-validator', 'json-studio-viewer', 'json-studio-converter', 'json-studio-diff-merge', 'json-studio-array-converter' );
 	if ( in_array( $handle, $module_scripts, true ) ) {
 		$tag = str_replace( '<script ', '<script type="module" ', $tag );
 	}
