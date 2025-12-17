@@ -82,42 +82,30 @@ get_header();
 					</a>
 				</div>
 
-				<!-- JSON Converter (PRO) -->
-				<div class="tool-card tool-card-pro">
+				<!-- JSON Converter -->
+				<div class="tool-card">
 					<div class="tool-card-header">
 						<span class="tool-icon">🔄</span>
-						<span class="tool-badge tool-badge-pro">PRO</span>
+						<span class="tool-badge tool-badge-free">FREE</span>
 					</div>
 					<h3 class="tool-card-title"><?php esc_html_e( 'JSON Converter', 'json-studio' ); ?></h3>
 					<p class="tool-card-description"><?php esc_html_e( 'Convert JSON to XML, CSV, YAML, and more formats. Batch conversion supported.', 'json-studio' ); ?></p>
-					<?php if ( json_studio_is_pro_user() ) : ?>
-						<a href="<?php echo esc_url( home_url( '/json-converter' ) ); ?>" class="tool-card-link">
-							<?php esc_html_e( 'Use Tool', 'json-studio' ); ?> →
-						</a>
-					<?php else : ?>
-						<a href="<?php echo esc_url( home_url( '/upgrade' ) ); ?>" class="tool-card-link">
-							<?php esc_html_e( 'Upgrade to PRO', 'json-studio' ); ?> →
-						</a>
-					<?php endif; ?>
+					<a href="<?php echo esc_url( home_url( '/json-converter' ) ); ?>" class="tool-card-link">
+						<?php esc_html_e( 'Use Tool', 'json-studio' ); ?> →
+					</a>
 				</div>
 
-				<!-- JSON Diff & Merge (PRO) -->
-				<div class="tool-card tool-card-pro">
+				<!-- JSON Diff & Merge -->
+				<div class="tool-card">
 					<div class="tool-card-header">
 						<span class="tool-icon">🔀</span>
-						<span class="tool-badge tool-badge-pro">PRO</span>
+						<span class="tool-badge tool-badge-free">FREE</span>
 					</div>
 					<h3 class="tool-card-title"><?php esc_html_e( 'JSON Diff & Merge', 'json-studio' ); ?></h3>
 					<p class="tool-card-description"><?php esc_html_e( 'Compare two JSON files and merge them intelligently. See differences highlighted.', 'json-studio' ); ?></p>
-					<?php if ( json_studio_is_pro_user() ) : ?>
-						<a href="<?php echo esc_url( home_url( '/json-diff-merge' ) ); ?>" class="tool-card-link">
-							<?php esc_html_e( 'Use Tool', 'json-studio' ); ?> →
-						</a>
-					<?php else : ?>
-						<a href="<?php echo esc_url( home_url( '/upgrade' ) ); ?>" class="tool-card-link">
-							<?php esc_html_e( 'Upgrade to PRO', 'json-studio' ); ?> →
-						</a>
-					<?php endif; ?>
+					<a href="<?php echo esc_url( home_url( '/json-diff-merge' ) ); ?>" class="tool-card-link">
+						<?php esc_html_e( 'Use Tool', 'json-studio' ); ?> →
+					</a>
 				</div>
 
 				<!-- JSON Schema Generator (PRO) -->

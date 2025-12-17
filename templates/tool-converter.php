@@ -1,7 +1,7 @@
 <?php
 /**
- * Template Name: JSON Converter Tool (PRO)
- * Template for JSON Converter - PRO feature
+ * Template Name: JSON Converter Tool
+ * Template for JSON Converter
  *
  * @package JSONStudio
  * @since 1.0.0
@@ -19,9 +19,7 @@ $has_access = json_studio_is_pro_user() || ! $is_pro;
 		<div class="container">
 			<div class="tool-header-content">
 				<h1 class="tool-title"><?php the_title(); ?></h1>
-				<?php if ( $is_pro && ! json_studio_is_pro_user() ) : ?>
-					<span class="tool-badge tool-badge-pro">PRO</span>
-				<?php endif; ?>
+				<span class="tool-badge tool-badge-free">FREE</span>
 				<?php if ( has_excerpt() ) : ?>
 					<p class="tool-description"><?php echo esc_html( get_the_excerpt() ); ?></p>
 				<?php endif; ?>
@@ -32,23 +30,6 @@ $has_access = json_studio_is_pro_user() || ! $is_pro;
 	<div class="tool-page-content">
 		<div class="container">
 			<div class="tool-layout">
-				<?php if ( ! $has_access ) : ?>
-					<div class="tool-pro-lock-modal">
-						<div class="pro-lock-content">
-							<div class="pro-lock-icon">🔒</div>
-							<h2><?php esc_html_e( 'PRO Feature', 'json-studio' ); ?></h2>
-							<p><?php esc_html_e( 'This tool is available exclusively for PRO users. Upgrade now to unlock all premium features!', 'json-studio' ); ?></p>
-							<ul class="pro-features-list">
-								<li>✅ <?php esc_html_e( 'Convert JSON to XML, CSV, YAML', 'json-studio' ); ?></li>
-								<li>✅ <?php esc_html_e( 'Batch conversion support', 'json-studio' ); ?></li>
-								<li>✅ <?php esc_html_e( 'Advanced formatting options', 'json-studio' ); ?></li>
-							</ul>
-							<a href="<?php echo esc_url( home_url( '/upgrade' ) ); ?>" class="btn btn-primary btn-lg">
-								<?php esc_html_e( 'Upgrade to PRO', 'json-studio' ); ?>
-							</a>
-						</div>
-					</div>
-				<?php else : ?>
 					<div class="tool-editor-container">
 						<div class="tool-editor-wrapper">
 							<div class="tool-editor-header">
