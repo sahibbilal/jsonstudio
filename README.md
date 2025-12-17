@@ -103,19 +103,20 @@ json_studio_tool_requires_pro($tool_slug)
 json_studio_get_tool_slug()
 ```
 
-## Shortcodes
+## Templates
 
-### Tool Shortcode
+Each tool has its own dedicated template that should be assigned to WordPress pages:
 
-Display a JSON tool anywhere:
+- `templates/tool-beautifier.php` - JSON Beautifier Tool
+- `templates/tool-validator.php` - JSON Validator Tool
+- `templates/tool-viewer.php` - JSON Tree Viewer Tool
+- `templates/tool-converter.php` - JSON Converter Tool
+- `templates/tool-diff-merge.php` - JSON Diff & Merge Tool
+- `templates/tool-schema-generator.php` - JSON Schema Generator Tool (PRO)
+- `templates/tool-mock-data.php` - Mock Data Generator Tool (PRO)
+- `templates/tool-api-dashboard.php` - API Dashboard Tool (PRO)
 
-```
-[json_tool tool="json-beautifier" type="editor"]
-```
-
-Parameters:
-- `tool` - Tool slug (required)
-- `type` - Tool type (default: "editor")
+To use a tool, create a WordPress page and assign the corresponding template from Page Attributes.
 
 ## Hooks
 

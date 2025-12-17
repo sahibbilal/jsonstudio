@@ -90,17 +90,35 @@ function json_studio_scripts() {
 		wp_enqueue_script( 'codemirror-yaml', 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/yaml/yaml.min.js', array( 'codemirror' ), '5.65.2', true );
 	}
 
-	// Tool-specific scripts
+	// Tool-specific scripts - React builds
 	if ( is_page_template( 'templates/tool-beautifier.php' ) || $tool_slug === 'json-beautifier' ) {
-		wp_enqueue_script( 'json-studio-beautifier', get_template_directory_uri() . '/assets/js/tool-beautifier.js', array( 'codemirror' ), $theme_version, true );
+		// Enqueue React build
+		wp_enqueue_script( 'json-studio-beautifier', get_template_directory_uri() . '/assets/js/build/tool-beautifier.js', array(), $theme_version, true );
+		// CSS is included in the JS bundle, but we can also enqueue separately if needed
+		$css_file = get_template_directory() . '/assets/js/build/assets/main.css';
+		if ( file_exists( $css_file ) ) {
+			wp_enqueue_style( 'json-studio-beautifier-css', get_template_directory_uri() . '/assets/js/build/assets/main.css', array(), $theme_version );
+		}
 	}
 
 	if ( is_page_template( 'templates/tool-validator.php' ) || $tool_slug === 'json-validator' ) {
-		wp_enqueue_script( 'json-studio-validator', get_template_directory_uri() . '/assets/js/tool-validator.js', array( 'codemirror' ), $theme_version, true );
+		// Enqueue React build
+		wp_enqueue_script( 'json-studio-validator', get_template_directory_uri() . '/assets/js/build/tool-validator.js', array(), $theme_version, true );
+		// CSS is included in the JS bundle, but we can also enqueue separately if needed
+		$css_file = get_template_directory() . '/assets/js/build/assets/main.css';
+		if ( file_exists( $css_file ) ) {
+			wp_enqueue_style( 'json-studio-validator-css', get_template_directory_uri() . '/assets/js/build/assets/main.css', array(), $theme_version );
+		}
 	}
 
 	if ( is_page_template( 'templates/tool-viewer.php' ) || $tool_slug === 'json-viewer' ) {
-		wp_enqueue_script( 'json-studio-viewer', get_template_directory_uri() . '/assets/js/tool-viewer.js', array( 'codemirror' ), $theme_version, true );
+		// Enqueue React build
+		wp_enqueue_script( 'json-studio-viewer', get_template_directory_uri() . '/assets/js/build/tool-viewer.js', array(), $theme_version, true );
+		// CSS is included in the JS bundle, but we can also enqueue separately if needed
+		$css_file = get_template_directory() . '/assets/js/build/assets/main.css';
+		if ( file_exists( $css_file ) ) {
+			wp_enqueue_style( 'json-studio-viewer-css', get_template_directory_uri() . '/assets/js/build/assets/main.css', array(), $theme_version );
+		}
 	}
 
 	if ( is_page_template( 'templates/tool-converter.php' ) || $tool_slug === 'json-converter' ) {
@@ -210,8 +228,6 @@ function json_studio_tool_requires_pro( $tool_slug = '' ) {
 	}
 
 	$pro_tools = array(
-		'json-converter',
-		'json-diff-merge',
 		'json-schema-generator',
 		'json-mock-data',
 		'api-dashboard',
@@ -391,49 +407,6 @@ function json_studio_customizer_css() {
 }
 add_action( 'wp_head', 'json_studio_customizer_css' );
 
-/**
- * Shortcode for tool integration
- */
-function json_studio_tool_shortcode( $atts ) {
-	$atts = shortcode_atts( array(
-		'tool' => '',
-		'type' => 'editor',
-	), $atts );
-
-	if ( empty( $atts['tool'] ) ) {
-		return '';
-	}
-
-	$tool_slug = sanitize_key( $atts['tool'] );
-	$is_pro    = json_studio_tool_requires_pro( $tool_slug );
-	$has_access = json_studio_is_pro_user() || ! $is_pro;
-
-	ob_start();
-	?>
-	<div class="json-studio-tool" data-tool="<?php echo esc_attr( $tool_slug ); ?>" data-type="<?php echo esc_attr( $atts['type'] ); ?>">
-		<?php if ( ! $has_access ) : ?>
-			<div class="json-studio-pro-lock">
-				<div class="pro-lock-content">
-					<h3><?php esc_html_e( 'PRO Feature', 'json-studio' ); ?></h3>
-					<p><?php esc_html_e( 'This tool is available for PRO users only.', 'json-studio' ); ?></p>
-					<a href="<?php echo esc_url( home_url( '/upgrade' ) ); ?>" class="btn btn-primary">
-						<?php esc_html_e( 'Upgrade to PRO', 'json-studio' ); ?>
-					</a>
-				</div>
-			</div>
-		<?php else : ?>
-			<div class="json-studio-tool-container">
-				<!-- Tool will be loaded here via JavaScript or plugin -->
-				<div class="tool-placeholder">
-					<?php esc_html_e( 'Loading tool...', 'json-studio' ); ?>
-				</div>
-			</div>
-		<?php endif; ?>
-	</div>
-	<?php
-	return ob_get_clean();
-}
-add_shortcode( 'json_tool', 'json_studio_tool_shortcode' );
 
 /**
  * Filter body classes
@@ -451,4 +424,16 @@ function json_studio_body_classes( $classes ) {
 	return $classes;
 }
 add_filter( 'body_class', 'json_studio_body_classes' );
+
+/**
+ * Add type="module" to React build scripts
+ */
+function json_studio_add_module_type( $tag, $handle, $src ) {
+	$module_scripts = array( 'json-studio-beautifier', 'json-studio-validator', 'json-studio-viewer' );
+	if ( in_array( $handle, $module_scripts, true ) ) {
+		$tag = str_replace( '<script ', '<script type="module" ', $tag );
+	}
+	return $tag;
+}
+add_filter( 'script_loader_tag', 'json_studio_add_module_type', 10, 3 );
 
