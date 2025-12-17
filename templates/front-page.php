@@ -108,6 +108,19 @@ get_header();
 					</a>
 				</div>
 
+				<!-- JSON Array Converter -->
+				<div class="tool-card">
+					<div class="tool-card-header">
+						<span class="tool-icon">📊</span>
+						<span class="tool-badge tool-badge-free">FREE</span>
+					</div>
+					<h3 class="tool-card-title"><?php esc_html_e( 'JSON Array Converter', 'json-studio' ); ?></h3>
+					<p class="tool-card-description"><?php esc_html_e( 'Convert JSON objects to arrays and arrays back to JSON. Bidirectional conversion with nested support.', 'json-studio' ); ?></p>
+					<a href="<?php echo esc_url( home_url( '/json-array-converter' ) ); ?>" class="tool-card-link">
+						<?php esc_html_e( 'Use Tool', 'json-studio' ); ?> →
+					</a>
+				</div>
+
 				<!-- JSON Schema Generator (PRO) -->
 				<div class="tool-card tool-card-pro">
 					<div class="tool-card-header">

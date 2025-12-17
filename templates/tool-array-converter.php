@@ -1,7 +1,7 @@
 <?php
 /**
- * Template Name: JSON Diff & Merge Tool
- * Template for JSON Diff & Merge
+ * Template Name: JSON Array Converter Tool
+ * Template for JSON to Array and Array to JSON Converter
  *
  * @package JSONStudio
  * @since 1.0.0
@@ -9,17 +9,20 @@
 
 get_header();
 
-$tool_slug = 'json-diff-merge';
+$tool_slug = 'json-array-converter';
 $is_pro    = json_studio_tool_requires_pro( $tool_slug );
 $has_access = json_studio_is_pro_user() || ! $is_pro;
 ?>
 
-<main id="main" class="site-main tool-page-main tool-diff-merge">
+<main id="main" class="site-main tool-page-main tool-array-converter">
 	<div class="tool-page-header">
 		<div class="container">
 			<div class="tool-header-content">
 				<h1 class="tool-title"><?php the_title(); ?></h1>
 				<span class="tool-badge tool-badge-free">FREE</span>
+				<?php if ( has_excerpt() ) : ?>
+					<p class="tool-description"><?php echo esc_html( get_the_excerpt() ); ?></p>
+				<?php endif; ?>
 			</div>
 		</div>
 	</div>
@@ -28,7 +31,7 @@ $has_access = json_studio_is_pro_user() || ! $is_pro;
 		<div class="container">
 			<div class="tool-layout">
 				<!-- React App Container -->
-				<div id="json-diff-merge-root"></div>
+				<div id="json-array-converter-root"></div>
 			</div>
 
 			<?php if ( have_posts() ) : ?>
