@@ -742,8 +742,15 @@ a:hover {
 
 .tool-layout {
 	display: grid;
-	grid-template-columns: 1fr 300px;
 	gap: var(--spacing-xl);
+	max-width: 100%;
+	overflow: hidden;
+}
+
+#json-beautifier-root {
+	width: 100%;
+	max-width: 100%;
+	overflow: hidden;
 }
 
 .tool-editor-container {
@@ -1240,10 +1247,6 @@ a:hover {
 
 	.dark-mode-toggle {
 		padding: var(--spacing-xs);
-	}
-
-	.tool-layout {
-		grid-template-columns: 1fr;
 	}
 
 	.tool-sidebar {

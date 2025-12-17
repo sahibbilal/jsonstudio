@@ -30,66 +30,17 @@ $has_access = json_studio_is_pro_user() || ! $is_pro;
 	<div class="tool-page-content">
 		<div class="container">
 			<div class="tool-layout">
-				<div class="tool-editor-container">
-					<div class="tool-editor-wrapper">
-						<div class="tool-editor-header">
-							<div class="tool-tabs">
-								<button class="tool-tab active" data-tab="input"><?php esc_html_e( 'JSON Input', 'json-studio' ); ?></button>
-								<button class="tool-tab" data-tab="tree"><?php esc_html_e( 'Tree View', 'json-studio' ); ?></button>
-							</div>
-							<div class="tool-actions">
-								<button class="btn btn-sm btn-primary" id="load-btn">
-									<?php esc_html_e( 'Load Tree', 'json-studio' ); ?>
-								</button>
-								<button class="btn btn-sm" id="expand-all-btn">
-									<?php esc_html_e( 'Expand All', 'json-studio' ); ?>
-								</button>
-								<button class="btn btn-sm" id="collapse-all-btn">
-									<?php esc_html_e( 'Collapse All', 'json-studio' ); ?>
-								</button>
-								<button class="btn btn-sm" id="clear-btn">
-									<?php esc_html_e( 'Clear', 'json-studio' ); ?>
-								</button>
-							</div>
-						</div>
-						<div class="tool-editor-content">
-							<div id="input-editor" class="json-editor-wrapper"></div>
-							<div id="tree-viewer" class="json-tree-viewer" style="display: none;"></div>
-						</div>
-					</div>
-				</div>
-
-				<aside class="tool-sidebar">
-					<div class="tool-options">
-						<h3 class="options-title"><?php esc_html_e( 'View Options', 'json-studio' ); ?></h3>
-						<div class="options-content">
-							<div class="option-group">
-								<label>
-									<input type="checkbox" id="show-line-numbers" checked />
-									<?php esc_html_e( 'Show Line Numbers', 'json-studio' ); ?>
-								</label>
-							</div>
-							<div class="option-group">
-								<label>
-									<input type="checkbox" id="highlight-values" checked />
-									<?php esc_html_e( 'Highlight Values', 'json-studio' ); ?>
-								</label>
-							</div>
-							<div class="option-group">
-								<label>
-									<input type="checkbox" id="show-types" />
-									<?php esc_html_e( 'Show Data Types', 'json-studio' ); ?>
-								</label>
-							</div>
-						</div>
-					</div>
-
-					<div class="tool-info">
-						<h3><?php esc_html_e( 'Tree Viewer', 'json-studio' ); ?></h3>
-						<p><?php esc_html_e( 'Visualize your JSON data in an interactive tree structure. Click on nodes to expand or collapse them.', 'json-studio' ); ?></p>
-					</div>
-				</aside>
+				<!-- React App Container -->
+				<div id="json-viewer-root"></div>
 			</div>
+
+			<?php if ( have_posts() ) : ?>
+				<?php while ( have_posts() ) : the_post(); ?>
+					<div class="tool-content">
+						<?php the_content(); ?>
+					</div>
+				<?php endwhile; ?>
+			<?php endif; ?>
 		</div>
 	</div>
 </main>
