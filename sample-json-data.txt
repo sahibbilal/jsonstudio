@@ -1,0 +1,307 @@
+================================================================================
+JSON Studio - Sample JSON Data for Testing
+================================================================================
+
+This file contains various JSON samples for testing the JSON Studio tools.
+
+================================================================================
+SAMPLE 1: User Profile (Moderate Complexity)
+================================================================================
+
+{
+  "id": 12345,
+  "name": "John Doe",
+  "email": "john.doe@example.com",
+  "age": 30,
+  "isActive": true,
+  "address": {
+    "street": "123 Main St",
+    "city": "New York",
+    "state": "NY",
+    "zipCode": "10001",
+    "country": "USA"
+  },
+  "phoneNumbers": [
+    {
+      "type": "home",
+      "number": "555-0100"
+    },
+    {
+      "type": "mobile",
+      "number": "555-0101"
+    }
+  ],
+  "preferences": {
+    "theme": "dark",
+    "notifications": true,
+    "language": "en"
+  },
+  "tags": ["developer", "designer", "photographer"],
+  "metadata": {
+    "createdAt": "2024-01-15T10:30:00Z",
+    "lastLogin": "2024-01-20T14:22:00Z",
+    "loginCount": 42
+  }
+}
+
+================================================================================
+SAMPLE 2: E-commerce Product Catalog (More Complex)
+================================================================================
+
+{
+  "store": {
+    "name": "Tech Store",
+    "location": "San Francisco, CA",
+    "established": 2010
+  },
+  "products": [
+    {
+      "id": "PROD-001",
+      "name": "Wireless Headphones",
+      "category": "Electronics",
+      "price": 99.99,
+      "currency": "USD",
+      "inStock": true,
+      "stockQuantity": 150,
+      "specifications": {
+        "batteryLife": "30 hours",
+        "connectivity": ["Bluetooth 5.0", "3.5mm Jack"],
+        "weight": "250g",
+        "colors": ["Black", "White", "Blue"]
+      },
+      "reviews": [
+        {
+          "userId": "USER-123",
+          "rating": 5,
+          "comment": "Excellent sound quality!",
+          "date": "2024-01-18"
+        },
+        {
+          "userId": "USER-456",
+          "rating": 4,
+          "comment": "Good value for money",
+          "date": "2024-01-19"
+        }
+      ]
+    },
+    {
+      "id": "PROD-002",
+      "name": "Smart Watch",
+      "category": "Wearables",
+      "price": 299.99,
+      "currency": "USD",
+      "inStock": true,
+      "stockQuantity": 75,
+      "specifications": {
+        "display": "1.4 inch AMOLED",
+        "batteryLife": "2 days",
+        "features": ["Heart Rate", "GPS", "Water Resistant"],
+        "compatibility": ["iOS", "Android"]
+      },
+      "reviews": []
+    }
+  ],
+  "totalProducts": 2,
+  "lastUpdated": "2024-01-20T08:00:00Z"
+}
+
+================================================================================
+SAMPLE 3: Invalid JSON (For Validator Testing)
+================================================================================
+
+{
+  "name": "Test",
+  "age": 25,
+  "isValid": true,
+  "items": [1, 2, 3,],
+  "nested": {
+    "key": "value"
+    "missing": "comma"
+  },
+  "unclosed": [
+}
+
+================================================================================
+SAMPLE 4: Simple Array
+================================================================================
+
+[
+  {
+    "id": 1,
+    "name": "Item One",
+    "value": 100
+  },
+  {
+    "id": 2,
+    "name": "Item Two",
+    "value": 200
+  },
+  {
+    "id": 3,
+    "name": "Item Three",
+    "value": 300
+  }
+]
+
+================================================================================
+SAMPLE 5: Minified JSON (For Beautifier Testing)
+================================================================================
+
+{"users":[{"id":1,"name":"Alice","email":"alice@example.com","roles":["admin","user"],"settings":{"theme":"dark","notifications":true}},{"id":2,"name":"Bob","email":"bob@example.com","roles":["user"],"settings":{"theme":"light","notifications":false}},{"id":3,"name":"Charlie","email":"charlie@example.com","roles":["user","moderator"],"settings":{"theme":"auto","notifications":true}}],"total":3,"page":1,"perPage":10}
+
+================================================================================
+SAMPLE 6: API Response Example
+================================================================================
+
+{
+  "status": "success",
+  "code": 200,
+  "message": "Data retrieved successfully",
+  "data": {
+    "users": [
+      {
+        "id": 1,
+        "username": "johndoe",
+        "email": "john@example.com",
+        "profile": {
+          "firstName": "John",
+          "lastName": "Doe",
+          "avatar": "https://example.com/avatars/john.jpg",
+          "bio": "Software developer and tech enthusiast"
+        },
+        "stats": {
+          "posts": 42,
+          "followers": 1250,
+          "following": 380
+        }
+      }
+    ],
+    "pagination": {
+      "currentPage": 1,
+      "totalPages": 10,
+      "perPage": 20,
+      "totalItems": 200
+    }
+  },
+  "timestamp": "2024-01-20T12:00:00Z"
+}
+
+================================================================================
+SAMPLE 7: Configuration File Example
+================================================================================
+
+{
+  "app": {
+    "name": "JSON Studio",
+    "version": "1.0.0",
+    "environment": "production"
+  },
+  "database": {
+    "host": "localhost",
+    "port": 3306,
+    "name": "jsonstudio",
+    "credentials": {
+      "username": "admin",
+      "password": "secure_password_123"
+    }
+  },
+  "features": {
+    "darkMode": true,
+    "notifications": true,
+    "analytics": true
+  },
+  "limits": {
+    "maxFileSize": 10485760,
+    "maxRequestsPerMinute": 100,
+    "sessionTimeout": 3600
+  }
+}
+
+================================================================================
+SAMPLE 8: Nested Objects (Deep Nesting)
+================================================================================
+
+{
+  "level1": {
+    "level2": {
+      "level3": {
+        "level4": {
+          "level5": {
+            "level6": {
+              "level7": {
+                "level8": {
+                  "level9": {
+                    "level10": {
+                      "value": "Deep nested value",
+                      "number": 42,
+                      "array": [1, 2, 3, 4, 5]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+================================================================================
+SAMPLE 9: Mixed Data Types
+================================================================================
+
+{
+  "string": "Hello World",
+  "number": 42,
+  "float": 3.14159,
+  "boolean": true,
+  "nullValue": null,
+  "array": [1, 2, 3, "four", true, null],
+  "object": {
+    "nested": "value"
+  },
+  "emptyString": "",
+  "emptyArray": [],
+  "emptyObject": {},
+  "specialChars": "Special: !@#$%^&*()_+-=[]{}|;':\",./<>?",
+  "unicode": "Unicode: 你好世界 🌍",
+  "escaped": "Escaped: \"quotes\" and \\backslashes\\"
+}
+
+================================================================================
+SAMPLE 10: Large Array (For Performance Testing)
+================================================================================
+
+[
+  {"id": 1, "name": "Item 1", "value": 10, "active": true},
+  {"id": 2, "name": "Item 2", "value": 20, "active": false},
+  {"id": 3, "name": "Item 3", "value": 30, "active": true},
+  {"id": 4, "name": "Item 4", "value": 40, "active": true},
+  {"id": 5, "name": "Item 5", "value": 50, "active": false},
+  {"id": 6, "name": "Item 6", "value": 60, "active": true},
+  {"id": 7, "name": "Item 7", "value": 70, "active": true},
+  {"id": 8, "name": "Item 8", "value": 80, "active": false},
+  {"id": 9, "name": "Item 9", "value": 90, "active": true},
+  {"id": 10, "name": "Item 10", "value": 100, "active": true}
+]
+
+================================================================================
+USAGE NOTES:
+================================================================================
+
+- Sample 1: Good for testing beautifier, validator, and tree viewer
+- Sample 2: Complex nested structure for tree viewer testing
+- Sample 3: Invalid JSON for validator error detection
+- Sample 4: Simple array structure
+- Sample 5: Minified JSON for beautifier testing
+- Sample 6: Real-world API response format
+- Sample 7: Configuration file structure
+- Sample 8: Deep nesting for tree viewer
+- Sample 9: All data types for comprehensive testing
+- Sample 10: Array structure for various operations
+
+Copy any sample and paste into the JSON Studio tools for testing!
+
+================================================================================
+

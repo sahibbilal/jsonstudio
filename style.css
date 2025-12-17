@@ -1,0 +1,18 @@
+/*
+Theme Name: JSON Studio
+Theme URI: https://jsonstudio.com
+Author: JSON Studio Team
+Author URI: https://jsonstudio.com
+Description: A modern, professional WordPress theme for JSON Studio - offering Free and PRO JSON tools including Beautifier, Validator, Tree Viewer, Converters, JSON Schema Generator, Mock Data, API Access, and Batch Jobs. Fully responsive, SEO-ready, and optimized for performance.
+Version: 1.0.0
+Requires at least: 6.0
+Tested up to: 6.4
+Requires PHP: 8.0
+License: GNU General Public License v2 or later
+License URI: http://www.gnu.org/licenses/gpl-2.0.html
+Text Domain: json-studio
+Tags: developer-tools, json, modern, responsive, dark-mode, accessibility-ready, translation-ready
+*/
+
+/* This file is intentionally minimal. Main styles are in assets/css/theme.css */
+
