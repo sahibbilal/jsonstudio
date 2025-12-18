@@ -10,8 +10,7 @@
 get_header();
 
 $tool_slug = 'json-diff-merge';
-$is_pro    = json_studio_tool_requires_pro( $tool_slug );
-$has_access = json_studio_is_pro_user() || ! $is_pro;
+// All tools are free
 ?>
 
 <main id="main" class="site-main tool-page-main tool-diff-merge">
@@ -19,7 +18,6 @@ $has_access = json_studio_is_pro_user() || ! $is_pro;
 		<div class="container">
 			<div class="tool-header-content">
 				<h1 class="tool-title"><?php the_title(); ?></h1>
-				<span class="tool-badge tool-badge-free">FREE</span>
 			</div>
 		</div>
 	</div>

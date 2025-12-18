@@ -19,11 +19,6 @@ $has_access = json_studio_is_pro_user() || ! $is_pro;
 		<div class="container">
 			<div class="tool-header-content">
 				<h1 class="tool-title"><?php the_title(); ?></h1>
-				<?php if ( $is_pro && ! json_studio_is_pro_user() ) : ?>
-					<span class="tool-badge tool-badge-pro">PRO</span>
-				<?php elseif ( ! $is_pro ) : ?>
-					<span class="tool-badge tool-badge-free">FREE</span>
-				<?php endif; ?>
 				<?php if ( has_excerpt() ) : ?>
 					<p class="tool-description"><?php echo esc_html( get_the_excerpt() ); ?></p>
 				<?php endif; ?>

@@ -31,11 +31,7 @@
 						</a>
 					</div>
 					<div class="top-bar-right">
-						<?php if ( ! json_studio_is_pro_user() ) : ?>
-							<a href="<?php echo esc_url( home_url( '/upgrade' ) ); ?>" class="top-bar-cta">
-								<?php esc_html_e( 'Upgrade to PRO', 'json-studio' ); ?> →
-							</a>
-						<?php endif; ?>
+						<!-- All tools are free -->
 					</div>
 				</div>
 			</div>
@@ -79,12 +75,6 @@
 				</nav>
 
 				<div class="header-actions">
-					<?php if ( ! json_studio_is_pro_user() ) : ?>
-						<a href="<?php echo esc_url( home_url( '/upgrade' ) ); ?>" class="btn btn-pro-upgrade">
-							<?php esc_html_e( 'Upgrade to PRO', 'json-studio' ); ?>
-						</a>
-					<?php endif; ?>
-
 					<div class="user-account">
 						<?php if ( is_user_logged_in() ) : ?>
 							<div class="user-menu">
@@ -97,9 +87,6 @@
 								</button>
 								<ul class="user-menu-dropdown">
 									<li><a href="<?php echo esc_url( admin_url( 'profile.php' ) ); ?>"><?php esc_html_e( 'Profile', 'json-studio' ); ?></a></li>
-									<?php if ( json_studio_is_pro_user() ) : ?>
-										<li><a href="<?php echo esc_url( home_url( '/api-dashboard' ) ); ?>"><?php esc_html_e( 'API Dashboard', 'json-studio' ); ?></a></li>
-									<?php endif; ?>
 									<li><a href="<?php echo esc_url( wp_logout_url( home_url() ) ); ?>"><?php esc_html_e( 'Logout', 'json-studio' ); ?></a></li>
 								</ul>
 							</div>
@@ -121,16 +108,6 @@
 			</div>
 		</div>
 
-		<?php if ( ! json_studio_is_pro_user() ) : ?>
-			<div class="sticky-upgrade-bar" id="sticky-upgrade-bar">
-				<div class="upgrade-bar-content">
-					<span class="upgrade-text"><?php esc_html_e( 'Unlock all PRO features and get unlimited access!', 'json-studio' ); ?></span>
-					<a href="<?php echo esc_url( home_url( '/upgrade' ) ); ?>" class="btn btn-sm btn-primary">
-						<?php esc_html_e( 'Upgrade Now', 'json-studio' ); ?>
-					</a>
-					<button class="upgrade-bar-close" aria-label="<?php esc_attr_e( 'Close', 'json-studio' ); ?>">×</button>
-				</div>
-			</div>
-		<?php endif; ?>
+		<!-- All tools are free - no upgrade bar -->
 	</header>
 

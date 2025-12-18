@@ -3,9 +3,11 @@ import ReactDOM from 'react-dom/client';
 import JSONValidator from './JSONValidator';
 import '../../main.css';
 
-const rootElement = document.getElementById('json-validator-root');
-if (rootElement) {
-  const root = ReactDOM.createRoot(rootElement);
-  root.render(<JSONValidator />);
-}
+document.addEventListener('DOMContentLoaded', () => {
+  const rootElement = document.getElementById('json-validator-root');
+  if (rootElement) {
+    const root = ReactDOM.createRoot(rootElement);
+    root.render(<JSONValidator />);
+  }
+});
 

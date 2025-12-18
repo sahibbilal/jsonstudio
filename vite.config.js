@@ -15,6 +15,10 @@ export default defineConfig({
         'tool-converter': path.resolve(__dirname, 'src/tools/converter/index.jsx'),
         'tool-diff-merge': path.resolve(__dirname, 'src/tools/diff-merge/index.jsx'),
         'tool-array-converter': path.resolve(__dirname, 'src/tools/array-converter/index.jsx'),
+        'tool-query-extractor': path.resolve(__dirname, 'src/tools/query-extractor/index.jsx'),
+        'tool-schema-generator': path.resolve(__dirname, 'src/tools/schema-generator/index.jsx'),
+        'tool-mock-data': path.resolve(__dirname, 'src/tools/mock-data/index.jsx'),
+        'global-settings': path.resolve(__dirname, 'src/global-settings.jsx'),
       },
       output: {
         entryFileNames: '[name].js',

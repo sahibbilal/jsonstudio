@@ -62,6 +62,19 @@
 	--transition-fast: 150ms ease;
 	--transition-base: 200ms ease;
 	--transition-slow: 300ms ease;
+
+	/* Font Sizes */
+	--font-size-small: 0.875rem;
+	--font-size-medium: 1rem;
+	--font-size-large: 1.125rem;
+	--font-size-xlarge: 1.25rem;
+
+	/* High Contrast Colors */
+	--hc-bg: #000000;
+	--hc-bg-secondary: #1a1a1a;
+	--hc-text: #ffffff;
+	--hc-border: #ffffff;
+	--hc-primary: #00ffff;
 }
 
 /* Dark Mode */
@@ -75,6 +88,108 @@
 	--color-text-muted: var(--color-text-muted-dark);
 	--color-border: var(--color-border-dark);
 	--color-shadow: var(--color-shadow-dark);
+}
+
+/* Font Size Adjustments */
+[data-font-size="small"] {
+	font-size: var(--font-size-small);
+}
+
+[data-font-size="large"] {
+	font-size: var(--font-size-large);
+}
+
+[data-font-size="xlarge"] {
+	font-size: var(--font-size-xlarge);
+}
+
+/* High Contrast Mode */
+[data-high-contrast="true"] {
+	--color-bg: var(--hc-bg);
+	--color-bg-secondary: var(--hc-bg-secondary);
+	--color-text: var(--hc-text);
+	--color-text-secondary: var(--hc-text);
+	--color-border: var(--hc-border);
+	--color-primary: var(--hc-primary);
+}
+
+[data-high-contrast="true"] * {
+	border-color: var(--hc-border) !important;
+}
+
+/* Screen Reader Only */
+.screen-reader-text {
+	clip: rect(1px, 1px, 1px, 1px);
+	position: absolute !important;
+	height: 1px;
+	width: 1px;
+	overflow: hidden;
+	word-wrap: normal !important;
+}
+
+.screen-reader-text:focus {
+	clip: auto !important;
+	display: block;
+	height: auto;
+	left: 5px;
+	top: 5px;
+	width: auto;
+	z-index: 100000;
+	background: var(--color-bg);
+	padding: var(--spacing-sm);
+	border: 2px solid var(--color-primary);
+	border-radius: var(--radius-md);
+}
+
+/* Tooltips */
+.tooltip {
+	position: relative;
+}
+
+.tooltip::after {
+	content: attr(data-tooltip);
+	position: absolute;
+	bottom: 100%;
+	left: 50%;
+	transform: translateX(-50%);
+	background: var(--color-bg-dark, #111827);
+	color: var(--color-text-dark, #F9FAFB);
+	padding: 6px 12px;
+	border-radius: 4px;
+	font-size: 0.75rem;
+	white-space: nowrap;
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.2s;
+	margin-bottom: 4px;
+	z-index: 10000;
+}
+
+.tooltip:hover::after,
+.tooltip:focus::after {
+	opacity: 1;
+}
+
+/* Keyboard Navigation Focus Styles */
+*:focus-visible {
+	outline: 2px solid var(--color-primary);
+	outline-offset: 2px;
+}
+
+/* Skip Link */
+.skip-link {
+	position: absolute;
+	top: -40px;
+	left: 0;
+	background: var(--color-primary);
+	color: #fff;
+	padding: 8px 16px;
+	text-decoration: none;
+	z-index: 100000;
+}
+
+.skip-link:focus {
+	top: 0;
 }
 
 /* Base Styles */

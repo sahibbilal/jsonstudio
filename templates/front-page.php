@@ -17,20 +17,18 @@ get_header();
 			<div class="hero-content">
 				<h1 class="hero-title">
 					<?php esc_html_e( 'Beautify, Validate & Convert JSON', 'json-studio' ); ?>
-					<span class="hero-subtitle"><?php esc_html_e( 'Free & PRO Tools', 'json-studio' ); ?></span>
+					<span class="hero-subtitle"><?php esc_html_e( 'Free JSON Tools', 'json-studio' ); ?></span>
 				</h1>
 				<p class="hero-description">
 					<?php esc_html_e( 'Powerful JSON tools for developers. Format, validate, convert, and work with JSON data effortlessly.', 'json-studio' ); ?>
 				</p>
+				<p class="hero-privacy-notice" style="margin-top: 1rem; font-size: 0.875rem; color: var(--color-text-secondary);">
+					🔒 <?php esc_html_e( 'Privacy First: All processing happens in your browser. No data retention. No server uploads.', 'json-studio' ); ?>
+				</p>
 				<div class="hero-actions">
 					<a href="<?php echo esc_url( home_url( '/json-beautifier' ) ); ?>" class="btn btn-primary btn-lg">
-						<?php esc_html_e( 'Get Started Free', 'json-studio' ); ?>
+						<?php esc_html_e( 'Get Started', 'json-studio' ); ?>
 					</a>
-					<?php if ( ! json_studio_is_pro_user() ) : ?>
-						<a href="<?php echo esc_url( home_url( '/upgrade' ) ); ?>" class="btn btn-secondary btn-lg">
-							<?php esc_html_e( 'Upgrade to PRO', 'json-studio' ); ?>
-						</a>
-					<?php endif; ?>
 				</div>
 			</div>
 		</div>
@@ -40,14 +38,13 @@ get_header();
 	<section class="tools-section">
 		<div class="container">
 			<h2 class="section-title"><?php esc_html_e( 'Our Tools', 'json-studio' ); ?></h2>
-			<p class="section-description"><?php esc_html_e( 'Choose from our collection of free and premium JSON tools', 'json-studio' ); ?></p>
+			<p class="section-description"><?php esc_html_e( 'Choose from our collection of free JSON tools', 'json-studio' ); ?></p>
 
 			<div class="tools-grid">
 				<!-- JSON Beautifier -->
 				<div class="tool-card">
 					<div class="tool-card-header">
 						<span class="tool-icon">✨</span>
-						<span class="tool-badge tool-badge-free">FREE</span>
 					</div>
 					<h3 class="tool-card-title"><?php esc_html_e( 'JSON Beautifier', 'json-studio' ); ?></h3>
 					<p class="tool-card-description"><?php esc_html_e( 'Format and beautify your JSON code with proper indentation and syntax highlighting.', 'json-studio' ); ?></p>
@@ -60,7 +57,6 @@ get_header();
 				<div class="tool-card">
 					<div class="tool-card-header">
 						<span class="tool-icon">✓</span>
-						<span class="tool-badge tool-badge-free">FREE</span>
 					</div>
 					<h3 class="tool-card-title"><?php esc_html_e( 'JSON Validator', 'json-studio' ); ?></h3>
 					<p class="tool-card-description"><?php esc_html_e( 'Validate JSON syntax and structure. Find errors and fix them quickly.', 'json-studio' ); ?></p>
@@ -73,7 +69,6 @@ get_header();
 				<div class="tool-card">
 					<div class="tool-card-header">
 						<span class="tool-icon">👁️</span>
-						<span class="tool-badge tool-badge-free">FREE</span>
 					</div>
 					<h3 class="tool-card-title"><?php esc_html_e( 'JSON Tree Viewer', 'json-studio' ); ?></h3>
 					<p class="tool-card-description"><?php esc_html_e( 'Visualize JSON data in an interactive tree structure. Navigate and explore easily.', 'json-studio' ); ?></p>
@@ -86,7 +81,6 @@ get_header();
 				<div class="tool-card">
 					<div class="tool-card-header">
 						<span class="tool-icon">🔄</span>
-						<span class="tool-badge tool-badge-free">FREE</span>
 					</div>
 					<h3 class="tool-card-title"><?php esc_html_e( 'JSON Converter', 'json-studio' ); ?></h3>
 					<p class="tool-card-description"><?php esc_html_e( 'Convert JSON to XML, CSV, YAML, and more formats. Batch conversion supported.', 'json-studio' ); ?></p>
@@ -99,7 +93,6 @@ get_header();
 				<div class="tool-card">
 					<div class="tool-card-header">
 						<span class="tool-icon">🔀</span>
-						<span class="tool-badge tool-badge-free">FREE</span>
 					</div>
 					<h3 class="tool-card-title"><?php esc_html_e( 'JSON Diff & Merge', 'json-studio' ); ?></h3>
 					<p class="tool-card-description"><?php esc_html_e( 'Compare two JSON files and merge them intelligently. See differences highlighted.', 'json-studio' ); ?></p>
@@ -112,7 +105,6 @@ get_header();
 				<div class="tool-card">
 					<div class="tool-card-header">
 						<span class="tool-icon">📊</span>
-						<span class="tool-badge tool-badge-free">FREE</span>
 					</div>
 					<h3 class="tool-card-title"><?php esc_html_e( 'JSON Array Converter', 'json-studio' ); ?></h3>
 					<p class="tool-card-description"><?php esc_html_e( 'Convert JSON objects to arrays and arrays back to JSON. Bidirectional conversion with nested support.', 'json-studio' ); ?></p>
@@ -121,62 +113,42 @@ get_header();
 					</a>
 				</div>
 
-				<!-- JSON Schema Generator (PRO) -->
-				<div class="tool-card tool-card-pro">
+				<!-- JSON Query & Extractor -->
+				<div class="tool-card">
+					<div class="tool-card-header">
+						<span class="tool-icon">🔍</span>
+					</div>
+					<h3 class="tool-card-title"><?php esc_html_e( 'JSON Query & Extractor', 'json-studio' ); ?></h3>
+					<p class="tool-card-description"><?php esc_html_e( 'Query JSON data with path-based queries, filter arrays by conditions, and extract subsets. Output as JSON, table, or list.', 'json-studio' ); ?></p>
+					<a href="<?php echo esc_url( home_url( '/json-query-extractor' ) ); ?>" class="tool-card-link">
+						<?php esc_html_e( 'Use Tool', 'json-studio' ); ?> →
+					</a>
+				</div>
+
+				<!-- JSON Schema Generator -->
+				<div class="tool-card">
 					<div class="tool-card-header">
 						<span class="tool-icon">📋</span>
-						<span class="tool-badge tool-badge-pro">PRO</span>
 					</div>
 					<h3 class="tool-card-title"><?php esc_html_e( 'JSON Schema Generator', 'json-studio' ); ?></h3>
 					<p class="tool-card-description"><?php esc_html_e( 'Generate JSON Schema from your JSON data. Validate and document your data structures.', 'json-studio' ); ?></p>
-					<?php if ( json_studio_is_pro_user() ) : ?>
-						<a href="<?php echo esc_url( home_url( '/json-schema-generator' ) ); ?>" class="tool-card-link">
-							<?php esc_html_e( 'Use Tool', 'json-studio' ); ?> →
-						</a>
-					<?php else : ?>
-						<a href="<?php echo esc_url( home_url( '/upgrade' ) ); ?>" class="tool-card-link">
-							<?php esc_html_e( 'Upgrade to PRO', 'json-studio' ); ?> →
-						</a>
-					<?php endif; ?>
+					<a href="<?php echo esc_url( home_url( '/json-schema-generator' ) ); ?>" class="tool-card-link">
+						<?php esc_html_e( 'Use Tool', 'json-studio' ); ?> →
+					</a>
 				</div>
 
-				<!-- Mock Data Generator (PRO) -->
-				<div class="tool-card tool-card-pro">
+				<!-- Mock Data Generator -->
+				<div class="tool-card">
 					<div class="tool-card-header">
 						<span class="tool-icon">🎲</span>
-						<span class="tool-badge tool-badge-pro">PRO</span>
 					</div>
 					<h3 class="tool-card-title"><?php esc_html_e( 'Mock Data Generator', 'json-studio' ); ?></h3>
 					<p class="tool-card-description"><?php esc_html_e( 'Generate realistic mock JSON data for testing. Customize fields and data types.', 'json-studio' ); ?></p>
-					<?php if ( json_studio_is_pro_user() ) : ?>
-						<a href="<?php echo esc_url( home_url( '/json-mock-data' ) ); ?>" class="tool-card-link">
-							<?php esc_html_e( 'Use Tool', 'json-studio' ); ?> →
-						</a>
-					<?php else : ?>
-						<a href="<?php echo esc_url( home_url( '/upgrade' ) ); ?>" class="tool-card-link">
-							<?php esc_html_e( 'Upgrade to PRO', 'json-studio' ); ?> →
-						</a>
-					<?php endif; ?>
+					<a href="<?php echo esc_url( home_url( '/json-mock-data' ) ); ?>" class="tool-card-link">
+						<?php esc_html_e( 'Use Tool', 'json-studio' ); ?> →
+					</a>
 				</div>
 
-				<!-- API Dashboard (PRO) -->
-				<div class="tool-card tool-card-pro">
-					<div class="tool-card-header">
-						<span class="tool-icon">🔌</span>
-						<span class="tool-badge tool-badge-pro">PRO</span>
-					</div>
-					<h3 class="tool-card-title"><?php esc_html_e( 'API Dashboard', 'json-studio' ); ?></h3>
-					<p class="tool-card-description"><?php esc_html_e( 'Access all tools via REST API. Manage API keys, view usage stats, and batch jobs.', 'json-studio' ); ?></p>
-					<?php if ( json_studio_is_pro_user() ) : ?>
-						<a href="<?php echo esc_url( home_url( '/api-dashboard' ) ); ?>" class="tool-card-link">
-							<?php esc_html_e( 'Use Tool', 'json-studio' ); ?> →
-						</a>
-					<?php else : ?>
-						<a href="<?php echo esc_url( home_url( '/upgrade' ) ); ?>" class="tool-card-link">
-							<?php esc_html_e( 'Upgrade to PRO', 'json-studio' ); ?> →
-						</a>
-					<?php endif; ?>
-				</div>
 			</div>
 		</div>
 	</section>
@@ -210,20 +182,7 @@ get_header();
 		</div>
 	</section>
 
-	<?php if ( ! json_studio_is_pro_user() ) : ?>
-		<!-- CTA Section -->
-		<section class="cta-section">
-			<div class="container">
-				<div class="cta-content">
-					<h2><?php esc_html_e( 'Ready to unlock PRO features?', 'json-studio' ); ?></h2>
-					<p><?php esc_html_e( 'Get unlimited access to all tools, API access, batch processing, and priority support.', 'json-studio' ); ?></p>
-					<a href="<?php echo esc_url( home_url( '/upgrade' ) ); ?>" class="btn btn-primary btn-lg">
-						<?php esc_html_e( 'Upgrade to PRO', 'json-studio' ); ?>
-					</a>
-				</div>
-			</div>
-		</section>
-	<?php endif; ?>
+	<!-- All tools are free - no upgrade CTA needed -->
 </main>
 
 <?php

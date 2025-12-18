@@ -54,6 +54,9 @@
 						&copy; <?php echo esc_html( date( 'Y' ) ); ?> <?php bloginfo( 'name' ); ?>. 
 						<?php esc_html_e( 'All rights reserved.', 'json-studio' ); ?>
 					</p>
+					<p style="font-size: 0.875rem; margin-top: 0.5rem; color: var(--color-text-secondary);">
+						<?php esc_html_e( '🔒 Privacy First: All processing happens in your browser. No data is sent to servers. Your JSON stays private.', 'json-studio' ); ?>
+					</p>
 				</div>
 				<?php
 				if ( has_nav_menu( 'footer' ) ) {
