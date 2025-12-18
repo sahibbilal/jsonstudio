@@ -11,6 +11,10 @@ const JSONValidator = () => {
   const [strictMode, setStrictMode] = useState(false);
   const [checkDuplicates, setCheckDuplicates] = useState(false);
   const [checkTrailingCommas, setCheckTrailingCommas] = useState(false);
+  const [checkEmptyKeys, setCheckEmptyKeys] = useState(false);
+  const [checkNullUndefined, setCheckNullUndefined] = useState(false);
+  const [checkNesting, setCheckNesting] = useState(false);
+  const [maxNestingDepth, setMaxNestingDepth] = useState(10);
   const [stats, setStats] = useState({ chars: 0, lines: 0, size: '0 KB' });
   const [status, setStatus] = useState({ type: '', message: '', errors: [] });
 
@@ -76,6 +80,53 @@ const JSONValidator = () => {
     setStats({ chars, lines, size: `${size} KB` });
   };
 
+  // Categorize and explain error in plain language
+  const explainError = (errorMessage) => {
+    const errorLower = errorMessage.toLowerCase();
+    
+    if (errorLower.includes('unexpected token')) {
+      return {
+        type: 'Syntax Error',
+        explanation: 'There is an unexpected character or token in your JSON. Check for missing commas, colons, or extra characters.',
+        category: 'syntax'
+      };
+    }
+    if (errorLower.includes('unexpected end')) {
+      return {
+        type: 'Incomplete JSON',
+        explanation: 'Your JSON appears to be incomplete. Check for missing closing brackets, braces, or quotes.',
+        category: 'syntax'
+      };
+    }
+    if (errorLower.includes('expected')) {
+      return {
+        type: 'Missing Element',
+        explanation: 'A required element is missing. Check for missing commas, colons, or brackets.',
+        category: 'syntax'
+      };
+    }
+    if (errorLower.includes('bad escape')) {
+      return {
+        type: 'Invalid Escape Sequence',
+        explanation: 'There is an invalid escape sequence in a string. Use valid escape sequences like \\n, \\t, \\", etc.',
+        category: 'syntax'
+      };
+    }
+    if (errorLower.includes('bad control character')) {
+      return {
+        type: 'Invalid Control Character',
+        explanation: 'There is an invalid control character in your JSON. Remove or escape control characters.',
+        category: 'syntax'
+      };
+    }
+    
+    return {
+      type: 'Parse Error',
+      explanation: errorMessage,
+      category: 'syntax'
+    };
+  };
+
   // Check for duplicate keys
   const checkDuplicateKeys = (obj, path = '', duplicates = []) => {
     if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) {
@@ -89,6 +140,9 @@ const JSONValidator = () => {
         duplicates.push({
           key: currentPath,
           message: `Duplicate key: "${key}"`,
+          type: 'Duplicate Key',
+          explanation: `The key "${key}" appears multiple times in the same object. JSON parsers typically use the last value.`,
+          category: 'structure'
         });
       }
       seen.add(key);
@@ -97,6 +151,124 @@ const JSONValidator = () => {
       }
     }
     return duplicates;
+  };
+
+  // Check for empty keys
+  const findEmptyKeys = (obj, path = '', emptyKeys = []) => {
+    if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) {
+      return emptyKeys;
+    }
+
+    for (const key in obj) {
+      const currentPath = path ? `${path}.${key}` : key;
+      if (key === '' || key.trim() === '') {
+        emptyKeys.push({
+          key: currentPath,
+          message: 'Empty key detected',
+          type: 'Empty Key',
+          explanation: 'An object contains an empty key name, which may cause issues.',
+          category: 'structure'
+        });
+      }
+      if (typeof obj[key] === 'object' && obj[key] !== null) {
+        findEmptyKeys(obj[key], currentPath, emptyKeys);
+      }
+    }
+    return emptyKeys;
+  };
+
+  // Check for null/undefined misuse
+  const findNullUndefinedIssues = (obj, path = '', issues = []) => {
+    if (obj === null) {
+      return issues;
+    }
+
+    if (typeof obj === 'object' && !Array.isArray(obj)) {
+      for (const key in obj) {
+        const currentPath = path ? `${path}.${key}` : key;
+        const value = obj[key];
+        
+        if (value === undefined) {
+          issues.push({
+            key: currentPath,
+            message: 'Undefined value detected',
+            type: 'Undefined Value',
+            explanation: `The key "${key}" has an undefined value. JSON does not support undefined - use null instead.`,
+            category: 'structure'
+          });
+        }
+        
+        if (typeof value === 'object' && value !== null) {
+          findNullUndefinedIssues(value, currentPath, issues);
+        } else if (Array.isArray(value)) {
+          value.forEach((item, index) => {
+            if (item === undefined) {
+              issues.push({
+                key: `${currentPath}[${index}]`,
+                message: 'Undefined value in array',
+                type: 'Undefined Value',
+                explanation: `Array element at index ${index} is undefined. Use null instead.`,
+                category: 'structure'
+              });
+            } else if (typeof item === 'object' && item !== null) {
+              findNullUndefinedIssues(item, `${currentPath}[${index}]`, issues);
+            }
+          });
+        }
+      }
+    } else if (Array.isArray(obj)) {
+      obj.forEach((item, index) => {
+        if (item === undefined) {
+          issues.push({
+            key: path ? `${path}[${index}]` : `[${index}]`,
+            message: 'Undefined value in array',
+            type: 'Undefined Value',
+            explanation: `Array element at index ${index} is undefined. Use null instead.`,
+            category: 'structure'
+          });
+        } else if (typeof item === 'object' && item !== null) {
+          findNullUndefinedIssues(item, path ? `${path}[${index}]` : `[${index}]`, issues);
+        }
+      });
+    }
+    
+    return issues;
+  };
+
+  // Check for deeply nested structures
+  const checkNestingDepth = (obj, currentDepth = 0, maxDepth = 10, path = '', warnings = []) => {
+    if (currentDepth > maxDepth) {
+      warnings.push({
+        key: path || 'root',
+        message: `Deeply nested structure detected (depth: ${currentDepth})`,
+        type: 'Deep Nesting',
+        explanation: `The JSON structure is nested ${currentDepth} levels deep, which exceeds the recommended maximum of ${maxDepth}. This may cause performance issues.`,
+        category: 'structure',
+        depth: currentDepth
+      });
+      return warnings;
+    }
+
+    if (obj === null || typeof obj !== 'object') {
+      return warnings;
+    }
+
+    if (Array.isArray(obj)) {
+      obj.forEach((item, index) => {
+        if (typeof item === 'object' && item !== null) {
+          checkNestingDepth(item, currentDepth + 1, maxDepth, path ? `${path}[${index}]` : `[${index}]`, warnings);
+        }
+      });
+    } else {
+      for (const key in obj) {
+        const currentPath = path ? `${path}.${key}` : key;
+        if (typeof obj[key] === 'object' && obj[key] !== null) {
+          checkNestingDepth(obj[key], currentDepth + 1, maxDepth, currentPath, warnings);
+        }
+      }
+    }
+
+    return warnings;
   };
 
   // Check for trailing commas (basic check)
@@ -151,15 +323,33 @@ const JSONValidator = () => {
         }
       }
 
+      // Check for empty keys if option is enabled
+      if (checkEmptyKeys) {
+        const emptyKeyErrors = findEmptyKeys(parsed);
+        if (emptyKeyErrors.length > 0) {
+          errors.push(...emptyKeyErrors);
+        }
+      }
+
+      // Check for null/undefined misuse if option is enabled
+      if (checkNullUndefined || strictMode) {
+        const nullUndefinedIssues = findNullUndefinedIssues(parsed);
+        if (nullUndefinedIssues.length > 0) {
+          errors.push(...nullUndefinedIssues);
+        }
+      }
+
+      // Check for deeply nested structures if option is enabled
+      if (checkNesting) {
+        const nestingWarnings = checkNestingDepth(parsed, 0, maxNestingDepth);
+        if (nestingWarnings.length > 0) {
+          errors.push(...nestingWarnings);
+        }
+      }
+
       // Strict mode checks
       if (strictMode) {
-        // Check for undefined values (not allowed in strict JSON)
-        const jsonString = JSON.stringify(parsed);
-        if (jsonString.includes('undefined')) {
-          errors.push({
-            message: 'Strict mode: undefined values are not allowed',
-          });
-        }
+        // Additional strict mode validations can go here
       }
 
       if (errors.length > 0) {
@@ -189,20 +379,50 @@ const JSONValidator = () => {
       const line = lines.length;
       const column = lines[lines.length - 1].length;
 
+      // Get error explanation
+      const errorInfo = explainError(error.message);
+
       setStatus({ 
         type: 'invalid', 
-        message: `✗ ${error.message}`, 
+        message: `✗ ${errorInfo.type}: ${errorInfo.explanation}`, 
         errors: [{
           line,
           column,
           message: error.message,
+          type: errorInfo.type,
+          explanation: errorInfo.explanation,
+          category: errorInfo.category,
+          position
         }]
       });
       if (setActive) {
         setActiveAction('validate');
-        showToast(`Invalid JSON: ${error.message}`, 'error');
+        showToast(`Invalid JSON: ${errorInfo.explanation}`, 'error');
       }
       return false;
+    }
+  };
+
+  // Jump to error location
+  const jumpToError = (error) => {
+    if (inputViewRef.current && error) {
+      const doc = inputViewRef.current.state.doc;
+      if (error.line) {
+        const line = doc.line(error.line);
+        const pos = line.from + Math.min(error.column || 0, line.length);
+        inputViewRef.current.dispatch({
+          selection: { anchor: pos, head: pos },
+          effects: EditorView.scrollIntoView(pos, { y: 'center' }),
+        });
+        inputViewRef.current.focus();
+      } else if (error.position) {
+        const pos = Math.min(error.position, doc.length);
+        inputViewRef.current.dispatch({
+          selection: { anchor: pos, head: pos },
+          effects: EditorView.scrollIntoView(pos, { y: 'center' }),
+        });
+        inputViewRef.current.focus();
+      }
     }
   };
 
@@ -360,11 +580,27 @@ const JSONValidator = () => {
             </h4>
             <ul style={{ margin: 0, paddingLeft: 'var(--spacing-lg)', fontSize: '0.875rem' }}>
               {status.errors.map((error, index) => (
-                <li key={index} style={{ marginBottom: 'var(--spacing-xs)' }}>
-                  {error.line && `Line ${error.line}: `}
-                  {error.column && `Column ${error.column}: `}
-                  {error.key && `Key "${error.key}": `}
-                  {error.message}
+                <li 
+                  key={index} 
+                  style={{ 
+                    marginBottom: 'var(--spacing-sm)',
+                    cursor: (error.line || error.position) ? 'pointer' : 'default',
+                    padding: 'var(--spacing-xs)',
+                    borderRadius: 'var(--radius-sm)',
+                    backgroundColor: (error.line || error.position) ? 'rgba(0,0,0,0.05)' : 'transparent',
+                    transition: 'background-color var(--transition-base)'
+                  }}
+                  onClick={() => jumpToError(error)}
+                  title={(error.line || error.position) ? 'Click to jump to error location' : ''}
+                >
+                  {error.type && <strong style={{ display: 'block', marginBottom: '2px' }}>{error.type}</strong>}
+                  {error.line && <span style={{ color: 'var(--color-primary)' }}>Line {error.line}</span>}
+                  {error.column && <span style={{ color: 'var(--color-primary)' }}>, Column {error.column}</span>}
+                  {error.key && <span style={{ color: 'var(--color-text-secondary)' }}> - Key: "{error.key}"</span>}
+                  {error.depth && <span style={{ color: 'var(--color-warning)' }}> - Depth: {error.depth}</span>}
+                  <div style={{ marginTop: '4px', fontSize: '0.8125rem', color: 'var(--color-text-secondary)' }}>
+                    {error.explanation || error.message}
+                  </div>
                 </li>
               ))}
             </ul>
@@ -419,6 +655,63 @@ const JSONValidator = () => {
                 />
                 <span style={{ fontSize: '0.875rem' }}>Check for Trailing Commas</span>
               </label>
+            </div>
+            <div className="option-group" style={{ marginBottom: 'var(--spacing-md)' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  id="check-empty-keys"
+                  checked={checkEmptyKeys}
+                  onChange={(e) => setCheckEmptyKeys(e.target.checked)}
+                  style={{ cursor: 'pointer' }}
+                />
+                <span style={{ fontSize: '0.875rem' }}>Detect Empty Keys</span>
+              </label>
+            </div>
+            <div className="option-group" style={{ marginBottom: 'var(--spacing-md)' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  id="check-null-undefined"
+                  checked={checkNullUndefined}
+                  onChange={(e) => setCheckNullUndefined(e.target.checked)}
+                  style={{ cursor: 'pointer' }}
+                />
+                <span style={{ fontSize: '0.875rem' }}>Detect Null/Undefined Misuse</span>
+              </label>
+            </div>
+            <div className="option-group" style={{ marginBottom: 'var(--spacing-md)' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  id="check-nesting"
+                  checked={checkNesting}
+                  onChange={(e) => setCheckNesting(e.target.checked)}
+                  style={{ cursor: 'pointer' }}
+                />
+                <span style={{ fontSize: '0.875rem' }}>Warn About Deep Nesting</span>
+              </label>
+              {checkNesting && (
+                <div style={{ marginTop: 'var(--spacing-xs)', marginLeft: '24px' }}>
+                  <label style={{ display: 'block', fontSize: '0.8125rem', marginBottom: '4px' }}>
+                    Max Nesting Depth:
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="50"
+                    value={maxNestingDepth}
+                    onChange={(e) => setMaxNestingDepth(parseInt(e.target.value) || 10)}
+                    style={{
+                      width: '100%',
+                      padding: '4px 8px',
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1px solid var(--color-border)',
+                      fontSize: '0.8125rem'
+                    }}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>

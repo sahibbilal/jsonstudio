@@ -12,8 +12,15 @@ const JSONConverter = () => {
   const [activeAction, setActiveAction] = useState('');
   const [outputFormat, setOutputFormat] = useState('xml');
   const [prettyPrint, setPrettyPrint] = useState(true);
+  const [preserveStructure, setPreserveStructure] = useState(true);
   const [stats, setStats] = useState({ chars: 0, lines: 0, size: '0 KB' });
   const [status, setStatus] = useState({ type: '', message: '' });
+  
+  // Custom mapping options
+  const [fieldMapping, setFieldMapping] = useState({ include: [], exclude: [], rename: {} });
+  const [flattenNested, setFlattenNested] = useState(false);
+  const [normalizeArrays, setNormalizeArrays] = useState(false);
+  const [showMappingPanel, setShowMappingPanel] = useState(false);
 
   const inputEditorRef = useRef(null);
   const outputEditorRef = useRef(null);
@@ -264,6 +271,239 @@ const JSONConverter = () => {
     return String(value);
   };
 
+  // Convert JSON to Plain Text
+  const jsonToPlainText = (obj, indent = 0, prefix = '') => {
+    const spaces = '  '.repeat(indent);
+    let text = '';
+
+    if (Array.isArray(obj)) {
+      obj.forEach((item, index) => {
+        if (typeof item === 'object' && item !== null) {
+          text += `${spaces}${prefix}[${index}]:\n`;
+          text += jsonToPlainText(item, indent + 1, '');
+        } else {
+          text += `${spaces}${prefix}[${index}]: ${String(item)}\n`;
+        }
+      });
+    } else if (typeof obj === 'object' && obj !== null) {
+      const keys = Object.keys(obj);
+      keys.forEach((key, index) => {
+        const value = obj[key];
+        if (Array.isArray(value)) {
+          text += `${spaces}${prefix}${key}:\n`;
+          text += jsonToPlainText(value, indent + 1, '');
+        } else if (typeof value === 'object' && value !== null) {
+          text += `${spaces}${prefix}${key}:\n`;
+          text += jsonToPlainText(value, indent + 1, '');
+        } else {
+          text += `${spaces}${prefix}${key}: ${String(value)}\n`;
+        }
+      });
+    } else {
+      text = `${spaces}${prefix}${String(obj)}\n`;
+    }
+
+    return text;
+  };
+
+  // Convert JSON to TOML
+  const jsonToTOML = (obj, prefix = '') => {
+    let toml = '';
+
+    if (Array.isArray(obj)) {
+      obj.forEach((item, index) => {
+        if (typeof item === 'object' && item !== null) {
+          toml += `[[${prefix || 'item'}]]\n`;
+          toml += jsonToTOML(item, '');
+        } else {
+          toml += `${prefix || 'item'}[${index}] = ${formatTOMLValue(item)}\n`;
+        }
+      });
+    } else if (typeof obj === 'object' && obj !== null) {
+      const keys = Object.keys(obj);
+      keys.forEach((key) => {
+        const value = obj[key];
+        const safeKey = /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(key) ? key : `"${key.replace(/"/g, '\\"')}"`;
+        const fullKey = prefix ? `${prefix}.${safeKey}` : safeKey;
+
+        if (Array.isArray(value)) {
+          if (value.length > 0 && typeof value[0] === 'object' && value[0] !== null) {
+            value.forEach((item) => {
+              toml += `[[${fullKey}]]\n`;
+              toml += jsonToTOML(item, '');
+            });
+          } else {
+            toml += `${fullKey} = ${formatTOMLArray(value)}\n`;
+          }
+        } else if (typeof value === 'object' && value !== null) {
+          toml += `[${fullKey}]\n`;
+          toml += jsonToTOML(value, '');
+        } else {
+          toml += `${fullKey} = ${formatTOMLValue(value)}\n`;
+        }
+      });
+    }
+
+    return toml;
+  };
+
+  const formatTOMLValue = (value) => {
+    if (value === null) {
+      return 'null';
+    }
+    if (typeof value === 'string') {
+      return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n')}"`;
+    }
+    if (typeof value === 'number') {
+      return String(value);
+    }
+    if (typeof value === 'boolean') {
+      return value ? 'true' : 'false';
+    }
+    return `"${String(value)}"`;
+  };
+
+  const formatTOMLArray = (arr) => {
+    return '[' + arr.map(item => formatTOMLValue(item)).join(', ') + ']';
+  };
+
+  // Apply field mapping (include/exclude/rename)
+  const applyFieldMapping = (obj) => {
+    if (typeof obj !== 'object' || obj === null) {
+      return obj;
+    }
+
+    if (Array.isArray(obj)) {
+      return obj.map(item => applyFieldMapping(item));
+    }
+
+    const result = {};
+    const keys = Object.keys(obj);
+
+    keys.forEach(key => {
+      // Check exclude list
+      if (fieldMapping.exclude.length > 0 && fieldMapping.exclude.includes(key)) {
+        return;
+      }
+
+      // Check include list (if not empty, only include specified fields)
+      if (fieldMapping.include.length > 0 && !fieldMapping.include.includes(key)) {
+        return;
+      }
+
+      // Apply rename
+      const newKey = fieldMapping.rename[key] || key;
+      const value = obj[key];
+
+      // Recursively apply mapping to nested objects
+      if (typeof value === 'object' && value !== null) {
+        result[newKey] = applyFieldMapping(value);
+      } else {
+        result[newKey] = value;
+      }
+    });
+
+    return result;
+  };
+
+  // Flatten nested objects
+  const flattenObject = (obj, prefix = '', result = {}) => {
+    if (typeof obj !== 'object' || obj === null) {
+      result[prefix || 'value'] = obj;
+      return result;
+    }
+
+    if (Array.isArray(obj)) {
+      obj.forEach((item, index) => {
+        const newPrefix = prefix ? `${prefix}[${index}]` : `[${index}]`;
+        flattenObject(item, newPrefix, result);
+      });
+      return result;
+    }
+
+    Object.keys(obj).forEach(key => {
+      const newKey = prefix ? `${prefix}.${key}` : key;
+      const value = obj[key];
+
+      if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+        flattenObject(value, newKey, result);
+      } else if (Array.isArray(value)) {
+        value.forEach((item, index) => {
+          const arrayKey = `${newKey}[${index}]`;
+          if (typeof item === 'object' && item !== null) {
+            flattenObject(item, arrayKey, result);
+          } else {
+            result[arrayKey] = item;
+          }
+        });
+      } else {
+        result[newKey] = value;
+      }
+    });
+
+    return result;
+  };
+
+  // Normalize arrays (convert arrays of objects to consistent structure)
+  const applyArrayNormalization = (obj) => {
+    if (typeof obj !== 'object' || obj === null) {
+      return obj;
+    }
+
+    if (Array.isArray(obj)) {
+      // If array contains objects, ensure all objects have the same keys
+      const objects = obj.filter(item => typeof item === 'object' && item !== null && !Array.isArray(item));
+      if (objects.length > 0) {
+        const allKeys = new Set();
+        objects.forEach(item => Object.keys(item).forEach(key => allKeys.add(key)));
+
+        return obj.map(item => {
+          if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
+            const normalized = {};
+            allKeys.forEach(key => {
+              normalized[key] = key in item ? applyArrayNormalization(item[key]) : null;
+            });
+            return normalized;
+          }
+          return applyArrayNormalization(item);
+        });
+      }
+      return obj.map(item => applyArrayNormalization(item));
+    }
+
+    const result = {};
+    Object.keys(obj).forEach(key => {
+      result[key] = applyArrayNormalization(obj[key]);
+    });
+    return result;
+  };
+
+  // Extract all keys from JSON for mapping UI
+  const extractKeys = (obj, prefix = '', keys = []) => {
+    if (typeof obj !== 'object' || obj === null) {
+      return keys;
+    }
+
+    if (Array.isArray(obj)) {
+      if (obj.length > 0 && typeof obj[0] === 'object' && obj[0] !== null) {
+        extractKeys(obj[0], prefix, keys);
+      }
+      return keys;
+    }
+
+    Object.keys(obj).forEach(key => {
+      const fullKey = prefix ? `${prefix}.${key}` : key;
+      if (!keys.includes(fullKey)) {
+        keys.push(fullKey);
+      }
+      if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
+        extractKeys(obj[key], fullKey, keys);
+      }
+    });
+
+    return keys;
+  };
+
   // Convert JSON
   const convertJSON = () => {
     if (!input.trim()) {
@@ -273,18 +513,40 @@ const JSONConverter = () => {
     }
 
     try {
-      const parsed = JSON.parse(input);
+      let parsed = JSON.parse(input);
+
+      // Apply custom mapping transformations
+      if (fieldMapping.include.length > 0 || fieldMapping.exclude.length > 0 || Object.keys(fieldMapping.rename).length > 0) {
+        parsed = applyFieldMapping(parsed);
+      }
+
+      if (flattenNested) {
+        parsed = flattenObject(parsed);
+      }
+
+      if (normalizeArrays) {
+        parsed = applyArrayNormalization(parsed);
+      }
+
       let converted = '';
 
       switch (outputFormat) {
         case 'xml':
-          converted = `<?xml version="1.0" encoding="UTF-8"?>\n<root>\n${jsonToXML(parsed, 'root', 1)}</root>`;
+          converted = preserveStructure 
+            ? `<?xml version="1.0" encoding="UTF-8"?>\n<root>\n${jsonToXML(parsed, 'root', 1)}</root>`
+            : `<?xml version="1.0" encoding="UTF-8"?>\n${jsonToXML(parsed, 'root', 0)}`;
           break;
         case 'csv':
           converted = jsonToCSV(parsed);
           break;
         case 'yaml':
           converted = jsonToYAML(parsed);
+          break;
+        case 'text':
+          converted = jsonToPlainText(parsed);
+          break;
+        case 'toml':
+          converted = jsonToTOML(parsed);
           break;
         default:
           converted = JSON.stringify(parsed, null, prettyPrint ? 2 : 0);
@@ -561,6 +823,8 @@ const JSONConverter = () => {
                 <option value="xml">XML</option>
                 <option value="csv">CSV</option>
                 <option value="yaml">YAML</option>
+                <option value="text">Plain Text</option>
+                <option value="toml">TOML</option>
               </select>
             </div>
             <div className="option-group" style={{ marginBottom: 'var(--spacing-md)' }}>
@@ -575,8 +839,180 @@ const JSONConverter = () => {
                 <span style={{ fontSize: '0.875rem' }}>Pretty Print</span>
               </label>
             </div>
+            <div className="option-group" style={{ marginBottom: 'var(--spacing-md)' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  id="preserve-structure"
+                  checked={preserveStructure}
+                  onChange={(e) => setPreserveStructure(e.target.checked)}
+                  style={{ cursor: 'pointer' }}
+                />
+                <span style={{ fontSize: '0.875rem' }}>Preserve Structure</span>
+              </label>
+            </div>
+            <div className="option-group" style={{ marginBottom: 'var(--spacing-md)' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  id="flatten-nested"
+                  checked={flattenNested}
+                  onChange={(e) => setFlattenNested(e.target.checked)}
+                  style={{ cursor: 'pointer' }}
+                />
+                <span style={{ fontSize: '0.875rem' }}>Flatten Nested Objects</span>
+              </label>
+            </div>
+            <div className="option-group" style={{ marginBottom: 'var(--spacing-md)' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  id="normalize-arrays"
+                  checked={normalizeArrays}
+                  onChange={(e) => setNormalizeArrays(e.target.checked)}
+                  style={{ cursor: 'pointer' }}
+                />
+                <span style={{ fontSize: '0.875rem' }}>Normalize Arrays</span>
+              </label>
+            </div>
+            <div className="option-group" style={{ marginBottom: 'var(--spacing-md)' }}>
+              <button
+                onClick={() => setShowMappingPanel(!showMappingPanel)}
+                style={{
+                  width: '100%',
+                  padding: 'var(--spacing-sm)',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--color-border)',
+                  backgroundColor: showMappingPanel ? 'var(--color-primary)' : 'var(--color-bg)',
+                  color: showMappingPanel ? '#fff' : 'var(--color-text)',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: 600
+                }}
+              >
+                {showMappingPanel ? 'Hide' : 'Show'} Field Mapping
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* Field Mapping Panel */}
+        {showMappingPanel && (
+          <div className="tool-options" style={{
+            backgroundColor: 'var(--color-bg-secondary)',
+            border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-xl)',
+            padding: 'var(--spacing-lg)',
+            marginBottom: 'var(--spacing-lg)'
+          }}>
+            <h3 className="options-title" style={{ marginTop: 0, marginBottom: 'var(--spacing-md)', fontSize: '1rem', fontWeight: 600 }}>
+              Field Mapping
+            </h3>
+            <div className="options-content">
+              {/* Include Fields */}
+              <div className="option-group" style={{ marginBottom: 'var(--spacing-md)' }}>
+                <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem', fontWeight: 500 }}>
+                  Include Fields (leave empty for all)
+                </label>
+                <input
+                  type="text"
+                  placeholder="field1, field2, field3"
+                  value={fieldMapping.include.join(', ')}
+                  onChange={(e) => {
+                    const fields = e.target.value.split(',').map(f => f.trim()).filter(f => f);
+                    setFieldMapping(prev => ({ ...prev, include: fields }));
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: 'var(--spacing-sm)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--color-border)',
+                    backgroundColor: 'var(--color-bg)',
+                    color: 'var(--color-text)',
+                    fontSize: '0.875rem'
+                  }}
+                />
+              </div>
+
+              {/* Exclude Fields */}
+              <div className="option-group" style={{ marginBottom: 'var(--spacing-md)' }}>
+                <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem', fontWeight: 500 }}>
+                  Exclude Fields
+                </label>
+                <input
+                  type="text"
+                  placeholder="field1, field2, field3"
+                  value={fieldMapping.exclude.join(', ')}
+                  onChange={(e) => {
+                    const fields = e.target.value.split(',').map(f => f.trim()).filter(f => f);
+                    setFieldMapping(prev => ({ ...prev, exclude: fields }));
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: 'var(--spacing-sm)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--color-border)',
+                    backgroundColor: 'var(--color-bg)',
+                    color: 'var(--color-text)',
+                    fontSize: '0.875rem'
+                  }}
+                />
+              </div>
+
+              {/* Rename Fields */}
+              <div className="option-group" style={{ marginBottom: 'var(--spacing-md)' }}>
+                <label style={{ display: 'block', marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem', fontWeight: 500 }}>
+                  Rename Fields (oldName:newName, one per line)
+                </label>
+                <textarea
+                  placeholder="oldName1:newName1&#10;oldName2:newName2"
+                  value={Object.entries(fieldMapping.rename).map(([old, newName]) => `${old}:${newName}`).join('\n')}
+                  onChange={(e) => {
+                    const renameMap = {};
+                    e.target.value.split('\n').forEach(line => {
+                      const [old, newName] = line.split(':').map(s => s.trim());
+                      if (old && newName) {
+                        renameMap[old] = newName;
+                      }
+                    });
+                    setFieldMapping(prev => ({ ...prev, rename: renameMap }));
+                  }}
+                  rows={4}
+                  style={{
+                    width: '100%',
+                    padding: 'var(--spacing-sm)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--color-border)',
+                    backgroundColor: 'var(--color-bg)',
+                    color: 'var(--color-text)',
+                    fontSize: '0.875rem',
+                    fontFamily: 'monospace',
+                    resize: 'vertical'
+                  }}
+                />
+              </div>
+
+              <button
+                onClick={() => {
+                  setFieldMapping({ include: [], exclude: [], rename: {} });
+                }}
+                style={{
+                  width: '100%',
+                  padding: 'var(--spacing-sm)',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--color-border)',
+                  backgroundColor: 'var(--color-bg)',
+                  color: 'var(--color-text)',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: 600
+                }}
+              >
+                Reset Mapping
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="tool-info" style={{
           backgroundColor: 'var(--color-bg-secondary)',
@@ -592,6 +1028,11 @@ const JSONConverter = () => {
             <li style={{ marginBottom: 'var(--spacing-xs)' }}>XML - Extensible Markup Language</li>
             <li style={{ marginBottom: 'var(--spacing-xs)' }}>CSV - Comma Separated Values</li>
             <li style={{ marginBottom: 'var(--spacing-xs)' }}>YAML - YAML Ain't Markup Language</li>
+            <li style={{ marginBottom: 'var(--spacing-xs)' }}>Plain Text - Human-readable format</li>
+            <li style={{ marginBottom: 'var(--spacing-xs)' }}>TOML - Tom's Obvious Minimal Language</li>
+            <li style={{ marginBottom: 'var(--spacing-xs)' }}>Use Field Mapping to customize output</li>
+            <li style={{ marginBottom: 'var(--spacing-xs)' }}>Flatten nested objects for flat structures</li>
+            <li style={{ marginBottom: 'var(--spacing-xs)' }}>Normalize arrays for consistent schemas</li>
           </ul>
         </div>
       </aside>

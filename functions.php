@@ -59,6 +59,12 @@ function json_studio_scripts() {
 	// Scripts
 	wp_enqueue_script( 'json-studio-main', get_template_directory_uri() . '/assets/js/main.js', array(), $theme_version, true );
 	wp_enqueue_script( 'json-studio-dark-mode', get_template_directory_uri() . '/assets/js/dark-mode.js', array(), $theme_version, true );
+	
+	// Global Settings (Accessibility & Privacy) - Load on all pages
+	wp_enqueue_script( 'json-studio-global-settings', get_template_directory_uri() . '/assets/js/build/global-settings.js', array(), $theme_version, true );
+	if ( file_exists( get_template_directory() . '/assets/js/build/assets/main.css' ) ) {
+		wp_enqueue_style( 'json-studio-global-settings-css', get_template_directory_uri() . '/assets/js/build/assets/main.css', array(), $theme_version );
+	}
 
 	// Localize script for AJAX
 	wp_localize_script( 'json-studio-main', 'jsonStudio', array(
@@ -75,9 +81,9 @@ function json_studio_scripts() {
 		 is_page_template( 'templates/tool-converter.php' ) ||
 		 is_page_template( 'templates/tool-diff-merge.php' ) ||
 		 is_page_template( 'templates/tool-array-converter.php' ) ||
-		 is_page_template( 'templates/tool-schema-generator.php' ) ||
+		 is_page_template( 'templates/tool-query-extractor.php' ) || 
+		 is_page_template( 'templates/tool-schema-generator.php' ) || 
 		 is_page_template( 'templates/tool-mock-data.php' ) ||
-		 is_page_template( 'templates/tool-api-dashboard.php' ) ||
 		 json_studio_is_tool_page();
 
 	if ( $is_tool_page ) {
@@ -152,6 +158,36 @@ function json_studio_scripts() {
 		}
 	}
 
+	if ( is_page_template( 'templates/tool-query-extractor.php' ) || $tool_slug === 'json-query-extractor' ) {
+		// Enqueue React build
+		wp_enqueue_script( 'json-studio-query-extractor', get_template_directory_uri() . '/assets/js/build/tool-query-extractor.js', array(), $theme_version, true );
+		// CSS is included in the JS bundle, but we can also enqueue separately if needed
+		$css_file = get_template_directory() . '/assets/js/build/assets/main.css';
+		if ( file_exists( $css_file ) ) {
+			wp_enqueue_style( 'json-studio-query-extractor-css', get_template_directory_uri() . '/assets/js/build/assets/main.css', array(), $theme_version );
+		}
+	}
+
+	if ( is_page_template( 'templates/tool-schema-generator.php' ) || $tool_slug === 'json-schema-generator' ) {
+		// Enqueue React build
+		wp_enqueue_script( 'json-studio-schema-generator', get_template_directory_uri() . '/assets/js/build/tool-schema-generator.js', array(), $theme_version, true );
+		// CSS is included in the JS bundle, but we can also enqueue separately if needed
+		$css_file = get_template_directory() . '/assets/js/build/assets/main.css';
+		if ( file_exists( $css_file ) ) {
+			wp_enqueue_style( 'json-studio-schema-generator-css', get_template_directory_uri() . '/assets/js/build/assets/main.css', array(), $theme_version );
+		}
+	}
+
+	if ( is_page_template( 'templates/tool-mock-data.php' ) || $tool_slug === 'json-mock-data' ) {
+		// Enqueue React build
+		wp_enqueue_script( 'json-studio-mock-data', get_template_directory_uri() . '/assets/js/build/tool-mock-data.js', array(), $theme_version, true );
+		// CSS is included in the JS bundle, but we can also enqueue separately if needed
+		$css_file = get_template_directory() . '/assets/js/build/assets/main.css';
+		if ( file_exists( $css_file ) ) {
+			wp_enqueue_style( 'json-studio-mock-data-css', get_template_directory_uri() . '/assets/js/build/assets/main.css', array(), $theme_version );
+		}
+	}
+
 	// General editor script for other tool pages
 	if ( is_page_template( 'templates/tool-page.php' ) ) {
 		wp_enqueue_script( 'json-studio-editor', get_template_directory_uri() . '/assets/js/editor.js', array(), $theme_version, true );
@@ -212,13 +248,10 @@ add_action( 'widgets_init', 'json_studio_widgets_init' );
 
 /**
  * Check if user has PRO access
+ * All tools are now free - always return true
  */
 function json_studio_is_pro_user() {
-	// Hook for PRO plugin integration
-	if ( function_exists( 'json_studio_pro_check_access' ) ) {
-		return json_studio_pro_check_access();
-	}
-	return false;
+	return true; // All tools are free
 }
 
 /**
@@ -241,26 +274,16 @@ function json_studio_is_tool_page() {
 		'json-diff-merge',
 		'json-schema-generator',
 		'json-mock-data',
-		'api-dashboard',
 	);
 	return in_array( json_studio_get_tool_slug(), $tool_pages, true );
 }
 
 /**
  * Check if tool requires PRO
+ * All tools are now free - always return false
  */
 function json_studio_tool_requires_pro( $tool_slug = '' ) {
-	if ( empty( $tool_slug ) ) {
-		$tool_slug = json_studio_get_tool_slug();
-	}
-
-	$pro_tools = array(
-		'json-schema-generator',
-		'json-mock-data',
-		'api-dashboard',
-	);
-
-	return in_array( $tool_slug, $pro_tools, true );
+	return false; // All tools are free
 }
 
 /**
@@ -316,7 +339,7 @@ function json_studio_structured_data() {
 			"url": "<?php echo esc_url( get_permalink() ); ?>",
 			"offers": {
 				"@type": "Offer",
-				"price": "<?php echo json_studio_tool_requires_pro( $tool_slug ) ? 'Paid' : 'Free'; ?>",
+				"price": "Free",
 				"priceCurrency": "USD"
 			}
 		}
@@ -444,9 +467,7 @@ function json_studio_body_classes( $classes ) {
 		$classes[] = 'tool-' . json_studio_get_tool_slug();
 	}
 
-	if ( json_studio_tool_requires_pro() && ! json_studio_is_pro_user() ) {
-		$classes[] = 'pro-locked';
-	}
+	// All tools are free - no PRO locks
 
 	return $classes;
 }

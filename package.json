@@ -10,13 +10,15 @@
     "watch": "vite build --watch"
   },
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "@codemirror/commands": "^6.2.1",
     "@codemirror/lang-json": "^6.0.1",
+    "@codemirror/language": "^6.11.3",
+    "@codemirror/lint": "^6.9.2",
+    "@codemirror/state": "^6.2.1",
     "@codemirror/theme-one-dark": "^6.1.2",
     "@codemirror/view": "^6.21.3",
-    "@codemirror/state": "^6.2.1",
-    "@codemirror/commands": "^6.2.1"
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",
@@ -25,4 +27,3 @@
     "vite": "^4.5.3"
   }
 }
-

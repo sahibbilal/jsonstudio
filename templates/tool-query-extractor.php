@@ -1,7 +1,7 @@
 <?php
 /**
- * Template Name: JSON Array Converter Tool
- * Template for JSON to Array and Array to JSON Converter
+ * Template Name: JSON Query & Extractor Tool
+ * Template for JSON Query & Data Extraction
  *
  * @package JSONStudio
  * @since 1.0.0
@@ -9,11 +9,11 @@
 
 get_header();
 
-$tool_slug = 'json-array-converter';
+$tool_slug = 'json-query-extractor';
 // All tools are free
 ?>
 
-<main id="main" class="site-main tool-page-main tool-array-converter">
+<main id="main" class="site-main tool-page-main tool-query-extractor">
 	<div class="tool-page-header">
 		<div class="container">
 			<div class="tool-header-content">
@@ -29,7 +29,7 @@ $tool_slug = 'json-array-converter';
 		<div class="container">
 			<div class="tool-layout">
 				<!-- React App Container -->
-				<div id="json-array-converter-root"></div>
+				<div id="json-query-extractor-root"></div>
 			</div>
 
 			<?php if ( have_posts() ) : ?>

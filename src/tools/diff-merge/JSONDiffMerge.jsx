@@ -10,8 +10,13 @@ const JSONDiffMerge = () => {
   const [input2, setInput2] = useState('');
   const [merged, setMerged] = useState('');
   const [activeTab, setActiveTab] = useState('diff');
+  const [diffView, setDiffView] = useState('side-by-side'); // 'side-by-side', 'unified'
   const [activeAction, setActiveAction] = useState('');
   const [mergeStrategy, setMergeStrategy] = useState('deep'); // 'deep', 'shallow', 'replace'
+  const [conflicts, setConflicts] = useState([]);
+  const [conflictResolutions, setConflictResolutions] = useState({});
+  const [previewMerged, setPreviewMerged] = useState('');
+  const [showPreview, setShowPreview] = useState(false);
   const [stats, setStats] = useState({ 
     input1: { chars: 0, lines: 0 }, 
     input2: { chars: 0, lines: 0 },
@@ -208,46 +213,78 @@ const JSONDiffMerge = () => {
   };
 
   // Find differences between two objects
-  const findDifferences = (obj1, obj2, path = '') => {
+  const findDifferences = (obj1, obj2, path = '', conflictsList = []) => {
     const diffs = [];
 
-    // Get all unique keys
-    const allKeys = new Set([...Object.keys(obj1 || {}), ...Object.keys(obj2 || {})]);
-
-    allKeys.forEach(key => {
-      const currentPath = path ? `${path}.${key}` : key;
-      const val1 = obj1?.[key];
-      const val2 = obj2?.[key];
-
-      if (!(key in obj1)) {
-        diffs.push({
-          path: currentPath,
-          type: 'added',
-          value: val2,
-        });
-      } else if (!(key in obj2)) {
-        diffs.push({
-          path: currentPath,
-          type: 'removed',
-          value: val1,
-        });
-      } else if (JSON.stringify(val1) !== JSON.stringify(val2)) {
-        if (typeof val1 === 'object' && val1 !== null && !Array.isArray(val1) &&
-            typeof val2 === 'object' && val2 !== null && !Array.isArray(val2)) {
-          // Recursively check nested objects
-          diffs.push(...findDifferences(val1, val2, currentPath));
-        } else {
-          diffs.push({
-            path: currentPath,
-            type: 'modified',
-            oldValue: val1,
-            newValue: val2,
-          });
+    // Handle arrays
+    if (Array.isArray(obj1) && Array.isArray(obj2)) {
+      const maxLen = Math.max(obj1.length, obj2.length);
+      for (let i = 0; i < maxLen; i++) {
+        const currentPath = path ? `${path}[${i}]` : `[${i}]`;
+        if (i >= obj1.length) {
+          diffs.push({ path: currentPath, type: 'added', value: obj2[i] });
+        } else if (i >= obj2.length) {
+          diffs.push({ path: currentPath, type: 'removed', value: obj1[i] });
+        } else if (JSON.stringify(obj1[i]) !== JSON.stringify(obj2[i])) {
+          if (typeof obj1[i] === 'object' && obj1[i] !== null && !Array.isArray(obj1[i]) &&
+              typeof obj2[i] === 'object' && obj2[i] !== null && !Array.isArray(obj2[i])) {
+            const nested = findDifferences(obj1[i], obj2[i], currentPath, conflictsList);
+            diffs.push(...nested.diffs);
+          } else {
+            diffs.push({ path: currentPath, type: 'modified', oldValue: obj1[i], newValue: obj2[i] });
+            conflictsList.push({ path: currentPath, oldValue: obj1[i], newValue: obj2[i] });
+          }
         }
+      }
+      return { diffs, conflicts: conflictsList };
+    }
+
+    // Handle objects
+    if (typeof obj1 === 'object' && obj1 !== null && typeof obj2 === 'object' && obj2 !== null) {
+      const allKeys = new Set([...Object.keys(obj1), ...Object.keys(obj2)]);
+
+      allKeys.forEach(key => {
+        const currentPath = path ? `${path}.${key}` : key;
+        const val1 = obj1?.[key];
+        const val2 = obj2?.[key];
+
+        if (!(key in obj1)) {
+          diffs.push({ path: currentPath, type: 'added', value: val2 });
+        } else if (!(key in obj2)) {
+          diffs.push({ path: currentPath, type: 'removed', value: val1 });
+        } else if (JSON.stringify(val1) !== JSON.stringify(val2)) {
+          if (typeof val1 === 'object' && val1 !== null && !Array.isArray(val1) &&
+              typeof val2 === 'object' && val2 !== null && !Array.isArray(val2)) {
+            const nested = findDifferences(val1, val2, currentPath, conflictsList);
+            diffs.push(...nested.diffs);
+          } else {
+            diffs.push({ path: currentPath, type: 'modified', oldValue: val1, newValue: val2 });
+            conflictsList.push({ path: currentPath, oldValue: val1, newValue: val2 });
+          }
+        }
+      });
+    }
+
+    return { diffs, conflicts: conflictsList };
+  };
+
+  // Generate unified diff view
+  const generateUnifiedDiff = (obj1, obj2) => {
+    const diffs = findDifferences(obj1, obj2);
+    const lines = [];
+    
+    diffs.diffs.forEach(diff => {
+      if (diff.type === 'added') {
+        lines.push({ type: 'added', text: `+ ${diff.path}: ${JSON.stringify(diff.value)}` });
+      } else if (diff.type === 'removed') {
+        lines.push({ type: 'removed', text: `- ${diff.path}: ${JSON.stringify(diff.value)}` });
+      } else if (diff.type === 'modified') {
+        lines.push({ type: 'removed', text: `- ${diff.path}: ${JSON.stringify(diff.oldValue)}` });
+        lines.push({ type: 'added', text: `+ ${diff.path}: ${JSON.stringify(diff.newValue)}` });
       }
     });
 
-    return diffs;
+    return lines;
   };
 
   // Compare JSON
@@ -262,8 +299,12 @@ const JSONDiffMerge = () => {
       const parsed1 = JSON.parse(input1);
       const parsed2 = JSON.parse(input2);
 
-      const diffs = findDifferences(parsed1, parsed2);
+      const result = findDifferences(parsed1, parsed2);
+      const diffs = result.diffs;
+      const conflictsList = result.conflicts;
+      
       setDifferences(diffs);
+      setConflicts(conflictsList);
       setActiveAction('diff');
       setStatus({ type: 'info', message: `Found ${diffs.length} difference(s)` });
       showToast(`Found ${diffs.length} difference(s)`, 'info');
@@ -275,11 +316,82 @@ const JSONDiffMerge = () => {
     }
   };
 
-  // Merge JSON
-  const mergeJSON = () => {
+  // Merge with conflict resolution
+  const mergeWithResolutions = (obj1, obj2, resolutions = {}) => {
+    if (Array.isArray(obj1) && Array.isArray(obj2)) {
+      return [...obj1, ...obj2];
+    }
+    if (Array.isArray(obj1) || Array.isArray(obj2)) {
+      return obj2;
+    }
+    if (obj1 === null || obj1 === undefined) {
+      return obj2;
+    }
+    if (obj2 === null || obj2 === undefined) {
+      return obj1;
+    }
+    if (typeof obj1 !== 'object' || typeof obj2 !== 'object') {
+      return obj2;
+    }
+
+    const result = { ...obj1 };
+    const allKeys = new Set([...Object.keys(obj1), ...Object.keys(obj2)]);
+
+    allKeys.forEach(key => {
+      const path = key;
+      const val1 = obj1[key];
+      const val2 = obj2[key];
+
+      if (!(key in obj1)) {
+        result[key] = val2;
+      } else if (!(key in obj2)) {
+        result[key] = val1;
+      } else if (JSON.stringify(val1) !== JSON.stringify(val2)) {
+        // Check if there's a manual resolution
+        if (resolutions[path]) {
+          if (resolutions[path] === 'left') {
+            result[key] = val1;
+          } else if (resolutions[path] === 'right') {
+            result[key] = val2;
+          } else if (resolutions[path] === 'custom' && resolutions[`${path}_custom`]) {
+            try {
+              result[key] = JSON.parse(resolutions[`${path}_custom`]);
+            } catch {
+              result[key] = resolutions[`${path}_custom`];
+            }
+          } else {
+            // Use merge strategy
+            if (typeof val1 === 'object' && val1 !== null && !Array.isArray(val1) &&
+                typeof val2 === 'object' && val2 !== null && !Array.isArray(val2)) {
+              result[key] = mergeWithResolutions(val1, val2, resolutions);
+            } else {
+              result[key] = val2;
+            }
+          }
+        } else {
+          // Use merge strategy
+          if (typeof val1 === 'object' && val1 !== null && !Array.isArray(val1) &&
+              typeof val2 === 'object' && val2 !== null && !Array.isArray(val2)) {
+            result[key] = mergeWithResolutions(val1, val2, resolutions);
+          } else {
+            result[key] = val2;
+          }
+        }
+      } else {
+        // Values are equal, but might be nested objects
+        if (typeof val1 === 'object' && val1 !== null && !Array.isArray(val1)) {
+          result[key] = mergeWithResolutions(val1, val2, resolutions);
+        }
+      }
+    });
+
+    return result;
+  };
+
+  // Preview merge
+  const previewMerge = () => {
     if (!input1.trim() || !input2.trim()) {
       showToast('Please enter both JSON objects to merge', 'warning');
-      setActiveAction('');
       return;
     }
 
@@ -289,7 +401,6 @@ const JSONDiffMerge = () => {
 
       let mergedResult;
       
-      // Handle arrays at root level
       if (Array.isArray(parsed1) && Array.isArray(parsed2)) {
         switch (mergeStrategy) {
           case 'deep':
@@ -305,19 +416,16 @@ const JSONDiffMerge = () => {
             mergedResult = [...parsed1, ...parsed2];
         }
       } else if (Array.isArray(parsed1) || Array.isArray(parsed2)) {
-        // If one is array and other is object, can't merge - use replace
         if (mergeStrategy === 'replace') {
           mergedResult = parsed2;
         } else {
           showToast('Cannot merge array with object. Use Replace strategy.', 'warning');
-          setActiveAction('');
           return;
         }
       } else {
-        // Both are objects (or primitives)
         switch (mergeStrategy) {
           case 'deep':
-            mergedResult = deepMerge(parsed1, parsed2);
+            mergedResult = mergeWithResolutions(parsed1, parsed2, conflictResolutions);
             break;
           case 'shallow':
             mergedResult = shallowMerge(parsed1, parsed2);
@@ -326,11 +434,10 @@ const JSONDiffMerge = () => {
             mergedResult = parsed2;
             break;
           default:
-            mergedResult = deepMerge(parsed1, parsed2);
+            mergedResult = mergeWithResolutions(parsed1, parsed2, conflictResolutions);
         }
       }
 
-      // Ensure we have a valid result
       if (mergedResult === undefined || mergedResult === null) {
         throw new Error('Merge resulted in undefined or null');
       }
@@ -341,10 +448,12 @@ const JSONDiffMerge = () => {
         throw new Error('Merge resulted in invalid output');
       }
 
-      setMerged(mergedString);
+      setPreviewMerged(mergedString);
+      setShowPreview(true);
+      setActiveTab('merged');
       
+      // Update merged editor with preview
       if (mergedViewRef.current) {
-        // Get current document length
         const currentLength = mergedViewRef.current.state.doc.length;
         mergedViewRef.current.dispatch({
           changes: {
@@ -354,18 +463,37 @@ const JSONDiffMerge = () => {
           },
         });
       }
-      
-      updateStats('merged', mergedString);
-      setActiveTab('merged');
-      setActiveAction('merge');
-      showToast('JSON merged successfully!', 'success');
-      setStatus({ type: 'valid', message: '✓ JSON merged successfully' });
     } catch (error) {
       showToast(`Error: ${error.message}`, 'error');
-      setActiveAction('');
-      setStatus({ type: 'invalid', message: `✗ ${error.message}` });
-      setMerged('');
     }
+  };
+
+  // Apply merge (after preview)
+  const applyMerge = () => {
+    setMerged(previewMerged);
+    
+    if (mergedViewRef.current) {
+      const currentLength = mergedViewRef.current.state.doc.length;
+      mergedViewRef.current.dispatch({
+        changes: {
+          from: 0,
+          to: currentLength,
+          insert: previewMerged,
+        },
+      });
+    }
+    
+    updateStats('merged', previewMerged);
+    setActiveAction('merge');
+    showToast('JSON merged successfully!', 'success');
+    setStatus({ type: 'valid', message: '✓ JSON merged successfully' });
+    setShowPreview(false);
+  };
+
+  // Merge JSON
+  const mergeJSON = () => {
+    // First show preview
+    previewMerge();
   };
 
   // Copy to clipboard
@@ -404,18 +532,22 @@ const JSONDiffMerge = () => {
         },
       });
     }
-    if (mergedViewRef.current) {
-      mergedViewRef.current.dispatch({
-        changes: {
-          from: 0,
-          to: mergedViewRef.current.state.doc.length,
-          insert: '',
-        },
-      });
-    }
+      if (mergedViewRef.current) {
+        mergedViewRef.current.dispatch({
+          changes: {
+            from: 0,
+            to: mergedViewRef.current.state.doc.length,
+            insert: '',
+          },
+        });
+      }
     setInput1('');
     setInput2('');
     setMerged('');
+    setPreviewMerged('');
+    setShowPreview(false);
+    setConflicts([]);
+    setConflictResolutions({});
     setStats({ 
       input1: { chars: 0, lines: 0 }, 
       input2: { chars: 0, lines: 0 },
@@ -555,7 +687,7 @@ const JSONDiffMerge = () => {
             backgroundColor: 'var(--color-bg-secondary)',
             flexShrink: 0
           }}>
-            <div className="tool-tabs" style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+            <div className="tool-tabs" style={{ display: 'flex', gap: 'var(--spacing-sm)', flexWrap: 'wrap' }}>
               <button
                 className={`tool-tab ${activeTab === 'diff' ? 'active' : ''}`}
                 onClick={() => setActiveTab('diff')}
@@ -582,8 +714,26 @@ const JSONDiffMerge = () => {
                   color: activeTab === 'merged' ? '#fff' : 'var(--color-text)'
                 }}
               >
-                Merged Result
+                {showPreview ? 'Preview' : 'Merged Result'}
               </button>
+              {activeTab === 'diff' && (
+                <select
+                  value={diffView}
+                  onChange={(e) => setDiffView(e.target.value)}
+                  style={{
+                    padding: 'var(--spacing-xs) var(--spacing-sm)',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--color-border)',
+                    backgroundColor: 'var(--color-bg)',
+                    color: 'var(--color-text)',
+                    fontSize: '0.75rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="side-by-side">Side-by-Side</option>
+                  <option value="unified">Unified</option>
+                </select>
+              )}
             </div>
             <div className="tool-actions" style={{ display: 'flex', gap: 'var(--spacing-sm)', flexWrap: 'wrap' }}>
               <button 
@@ -618,8 +768,27 @@ const JSONDiffMerge = () => {
                   transition: 'all var(--transition-base)'
                 }}
               >
-                Merge
+                {showPreview ? 'Preview Merge' : 'Merge'}
               </button>
+              {showPreview && (
+                <button 
+                  className="btn btn-sm" 
+                  onClick={applyMerge} 
+                  style={{ 
+                    padding: 'var(--spacing-xs) var(--spacing-md)', 
+                    borderRadius: 'var(--radius-2xl)', 
+                    border: 'none', 
+                    cursor: 'pointer', 
+                    backgroundColor: 'var(--color-primary)', 
+                    color: '#fff',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    transition: 'all var(--transition-base)'
+                  }}
+                >
+                  Apply Merge
+                </button>
+              )}
               <button 
                 className="btn btn-sm" 
                 onClick={copyToClipboard} 
@@ -673,63 +842,250 @@ const JSONDiffMerge = () => {
                 height: '100%',
                 backgroundColor: 'var(--color-bg)'
               }}>
-                {differences.length > 0 ? (
-                  <div>
-                    <h4 style={{ marginTop: 0, marginBottom: 'var(--spacing-md)', fontSize: '0.875rem', fontWeight: 600 }}>
-                      Found {differences.length} difference(s):
-                    </h4>
-                    <ul style={{ margin: 0, paddingLeft: 'var(--spacing-lg)', fontSize: '0.875rem' }}>
-                      {differences.map((diff, index) => (
-                        <li key={index} style={{ marginBottom: 'var(--spacing-sm)' }}>
-                          <strong style={{ color: 'var(--color-primary)' }}>{diff.path}:</strong>{' '}
-                          {diff.type === 'added' && (
-                            <span style={{ color: '#10b981' }}>Added: {JSON.stringify(diff.value)}</span>
-                          )}
-                          {diff.type === 'removed' && (
-                            <span style={{ color: '#ef4444' }}>Removed: {JSON.stringify(diff.value)}</span>
-                          )}
-                          {diff.type === 'modified' && (
-                            <span>
-                              <span style={{ color: '#ef4444' }}>Old: {JSON.stringify(diff.oldValue)}</span>
-                              {' → '}
-                              <span style={{ color: '#10b981' }}>New: {JSON.stringify(diff.newValue)}</span>
-                            </span>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                {diffView === 'unified' ? (
+                  // Unified Diff View
+                  differences.length > 0 ? (
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.875rem' }}>
+                      <h4 style={{ marginTop: 0, marginBottom: 'var(--spacing-md)', fontSize: '0.875rem', fontWeight: 600 }}>
+                        Unified Diff ({differences.length} difference(s)):
+                      </h4>
+                      <div style={{ 
+                        backgroundColor: 'var(--color-bg-secondary)',
+                        border: '1px solid var(--color-border)',
+                        borderRadius: 'var(--radius-md)',
+                        padding: 'var(--spacing-md)'
+                      }}>
+                        {differences.map((diff, index) => (
+                          <div key={index} style={{ 
+                            marginBottom: 'var(--spacing-xs)',
+                            padding: '4px 8px',
+                            borderRadius: 'var(--radius-sm)',
+                            backgroundColor: diff.type === 'added' ? 'rgba(16, 185, 129, 0.1)' :
+                                           diff.type === 'removed' ? 'rgba(239, 68, 68, 0.1)' :
+                                           'rgba(245, 158, 11, 0.1)',
+                            borderLeft: `3px solid ${diff.type === 'added' ? '#10b981' :
+                                                      diff.type === 'removed' ? '#ef4444' :
+                                                      '#f59e0b'}`
+                          }}>
+                            {diff.type === 'added' && (
+                              <div style={{ color: '#10b981' }}>
+                                <span style={{ fontWeight: 600 }}>+</span> {diff.path}: {JSON.stringify(diff.value)}
+                              </div>
+                            )}
+                            {diff.type === 'removed' && (
+                              <div style={{ color: '#ef4444' }}>
+                                <span style={{ fontWeight: 600 }}>-</span> {diff.path}: {JSON.stringify(diff.value)}
+                              </div>
+                            )}
+                            {diff.type === 'modified' && (
+                              <>
+                                <div style={{ color: '#ef4444' }}>
+                                  <span style={{ fontWeight: 600 }}>-</span> {diff.path}: {JSON.stringify(diff.oldValue)}
+                                </div>
+                                <div style={{ color: '#10b981' }}>
+                                  <span style={{ fontWeight: 600 }}>+</span> {diff.path}: {JSON.stringify(diff.newValue)}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ 
+                      color: 'var(--color-text-secondary)', 
+                      textAlign: 'center', 
+                      padding: 'var(--spacing-xl)',
+                      fontSize: '0.875rem'
+                    }}>
+                      Click "Compare" to find differences between the two JSON objects
+                    </div>
+                  )
                 ) : (
-                  <div style={{ 
-                    color: 'var(--color-text-secondary)', 
-                    textAlign: 'center', 
-                    padding: 'var(--spacing-xl)',
-                    fontSize: '0.875rem'
-                  }}>
-                    Click "Compare" to find differences between the two JSON objects
-                  </div>
+                  // Side-by-Side Diff View
+                  differences.length > 0 ? (
+                    <div>
+                      <h4 style={{ marginTop: 0, marginBottom: 'var(--spacing-md)', fontSize: '0.875rem', fontWeight: 600 }}>
+                        Found {differences.length} difference(s):
+                      </h4>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-md)' }}>
+                        <div>
+                          <h5 style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: 'var(--spacing-sm)', color: '#ef4444' }}>
+                            JSON 1 (Removed/Modified)
+                          </h5>
+                          <ul style={{ margin: 0, paddingLeft: 'var(--spacing-lg)', fontSize: '0.875rem' }}>
+                            {differences.filter(d => d.type === 'removed' || d.type === 'modified').map((diff, index) => (
+                              <li key={index} style={{ 
+                                marginBottom: 'var(--spacing-sm)',
+                                padding: '4px 8px',
+                                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                borderRadius: 'var(--radius-sm)'
+                              }}>
+                                <strong style={{ color: 'var(--color-primary)' }}>{diff.path}:</strong>{' '}
+                                {diff.type === 'removed' ? (
+                                  <span style={{ color: '#ef4444' }}>{JSON.stringify(diff.value)}</span>
+                                ) : (
+                                  <span style={{ color: '#ef4444' }}>{JSON.stringify(diff.oldValue)}</span>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div>
+                          <h5 style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: 'var(--spacing-sm)', color: '#10b981' }}>
+                            JSON 2 (Added/Modified)
+                          </h5>
+                          <ul style={{ margin: 0, paddingLeft: 'var(--spacing-lg)', fontSize: '0.875rem' }}>
+                            {differences.filter(d => d.type === 'added' || d.type === 'modified').map((diff, index) => (
+                              <li key={index} style={{ 
+                                marginBottom: 'var(--spacing-sm)',
+                                padding: '4px 8px',
+                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                borderRadius: 'var(--radius-sm)'
+                              }}>
+                                <strong style={{ color: 'var(--color-primary)' }}>{diff.path}:</strong>{' '}
+                                {diff.type === 'added' ? (
+                                  <span style={{ color: '#10b981' }}>{JSON.stringify(diff.value)}</span>
+                                ) : (
+                                  <span style={{ color: '#10b981' }}>{JSON.stringify(diff.newValue)}</span>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ 
+                      color: 'var(--color-text-secondary)', 
+                      textAlign: 'center', 
+                      padding: 'var(--spacing-xl)',
+                      fontSize: '0.875rem'
+                    }}>
+                      Click "Compare" to find differences between the two JSON objects
+                    </div>
+                  )
                 )}
               </div>
             )}
 
             {/* Merged Result View */}
             {activeTab === 'merged' && (
-              <div
-                ref={mergedEditorRef}
-                className="json-editor-wrapper"
-                style={{ 
-                  display: 'block',
-                  width: '100%',
-                  height: '100%',
-                  maxWidth: '100%',
-                  overflow: 'hidden',
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0
-                }}
-              />
+              <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                {showPreview && conflicts.length > 0 && (
+                  <div style={{
+                    padding: 'var(--spacing-md)',
+                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                    borderBottom: '1px solid rgba(245, 158, 11, 0.3)',
+                    maxHeight: '200px',
+                    overflowY: 'auto'
+                  }}>
+                    <h4 style={{ marginTop: 0, marginBottom: 'var(--spacing-sm)', fontSize: '0.875rem', fontWeight: 600 }}>
+                      Resolve Conflicts ({conflicts.length}):
+                    </h4>
+                    {conflicts.map((conflict, index) => (
+                      <div key={index} style={{
+                        marginBottom: 'var(--spacing-sm)',
+                        padding: 'var(--spacing-sm)',
+                        backgroundColor: 'var(--color-bg)',
+                        borderRadius: 'var(--radius-sm)',
+                        border: '1px solid var(--color-border)'
+                      }}>
+                        <div style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: 'var(--spacing-xs)' }}>
+                          {conflict.path}:
+                        </div>
+                        <div style={{ display: 'flex', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-xs)' }}>
+                          <button
+                            onClick={() => {
+                              setConflictResolutions(prev => ({ ...prev, [conflict.path]: 'left' }));
+                            }}
+                            style={{
+                              flex: 1,
+                              padding: '6px 12px',
+                              borderRadius: 'var(--radius-sm)',
+                              border: `2px solid ${conflictResolutions[conflict.path] === 'left' ? '#3b82f6' : 'var(--color-border)'}`,
+                              backgroundColor: conflictResolutions[conflict.path] === 'left' ? 'rgba(59, 130, 246, 0.1)' : 'var(--color-bg)',
+                              cursor: 'pointer',
+                              fontSize: '0.75rem'
+                            }}
+                          >
+                            Use JSON 1: {JSON.stringify(conflict.oldValue).substring(0, 50)}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setConflictResolutions(prev => ({ ...prev, [conflict.path]: 'right' }));
+                            }}
+                            style={{
+                              flex: 1,
+                              padding: '6px 12px',
+                              borderRadius: 'var(--radius-sm)',
+                              border: `2px solid ${conflictResolutions[conflict.path] === 'right' ? '#3b82f6' : 'var(--color-border)'}`,
+                              backgroundColor: conflictResolutions[conflict.path] === 'right' ? 'rgba(59, 130, 246, 0.1)' : 'var(--color-bg)',
+                              cursor: 'pointer',
+                              fontSize: '0.75rem'
+                            }}
+                          >
+                            Use JSON 2: {JSON.stringify(conflict.newValue).substring(0, 50)}
+                          </button>
+                        </div>
+                        <div style={{ display: 'flex', gap: 'var(--spacing-xs)', alignItems: 'center' }}>
+                          <input
+                            type="text"
+                            placeholder="Or enter custom value..."
+                            value={conflictResolutions[`${conflict.path}_custom`] || ''}
+                            onChange={(e) => {
+                              setConflictResolutions(prev => ({
+                                ...prev,
+                                [conflict.path]: 'custom',
+                                [`${conflict.path}_custom`]: e.target.value
+                              }));
+                            }}
+                            style={{
+                              flex: 1,
+                              padding: '4px 8px',
+                              borderRadius: 'var(--radius-sm)',
+                              border: '1px solid var(--color-border)',
+                              fontSize: '0.75rem'
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                    <button
+                      onClick={previewMerge}
+                      style={{
+                        marginTop: 'var(--spacing-sm)',
+                        padding: '6px 12px',
+                        borderRadius: 'var(--radius-sm)',
+                        border: 'none',
+                        backgroundColor: 'var(--color-primary)',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        fontSize: '0.75rem',
+                        fontWeight: 600
+                      }}
+                    >
+                      Update Preview
+                    </button>
+                  </div>
+                )}
+                <div
+                  ref={mergedEditorRef}
+                  className="json-editor-wrapper"
+                  style={{ 
+                    display: 'block',
+                    width: '100%',
+                    height: showPreview && conflicts.length > 0 ? 'calc(100% - 200px)' : '100%',
+                    maxWidth: '100%',
+                    overflow: 'hidden',
+                    position: 'absolute',
+                    top: showPreview && conflicts.length > 0 ? '200px' : 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0
+                  }}
+                />
+              </div>
             )}
           </div>
           <div className="tool-editor-footer" style={{ 
